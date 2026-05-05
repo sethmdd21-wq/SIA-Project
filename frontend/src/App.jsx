@@ -13,6 +13,7 @@ import SignUp from './pages/SignUp';
 import Order from './pages/Order';
 import Takeout from './pages/Takeout';
 import Profile from './pages/Profile';
+import AdminDashboard from './pages/AdminDashboard';
 import './App.css';
 
 function App() {
@@ -54,6 +55,11 @@ function App() {
                   <Route path="/profile" element={
                     <ProtectedRoute>
                       <Profile />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/admin" element={
+                    <ProtectedRoute adminOnly>
+                      <AdminDashboard />
                     </ProtectedRoute>
                   } />
                 </Routes>

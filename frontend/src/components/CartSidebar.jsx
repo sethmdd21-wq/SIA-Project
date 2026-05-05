@@ -1,9 +1,11 @@
 import { X, Trash2, Plus, Minus, CreditCard } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import { useNavigate } from 'react-router-dom';
 import './CartSidebar.css';
 
 const CartSidebar = () => {
   const { isCartOpen, closeCart, cart, removeFromCart, updateQuantity, cartTotal } = useCart();
+  const navigate = useNavigate();
 
   if (!isCartOpen) return null;
 
@@ -28,7 +30,9 @@ const CartSidebar = () => {
             <ul className="cart-items-list">
               {cart.map(item => (
                 <li key={item.id} className="cart-item">
-                  <div className="cart-item-img">{item.img}</div>
+                  <div className="cart-item-img">
+                    <img src={item.img} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '10px' }} />
+                  </div>
                   <div className="cart-item-details">
                     <h4>{item.name}</h4>
                     <span className="cart-item-price">{item.price}</span>
@@ -53,9 +57,9 @@ const CartSidebar = () => {
           <div className="cart-footer">
             <div className="cart-summary">
               <span>Subtotal:</span>
-              <span className="cart-total-price">${cartTotal.toFixed(2)}</span>
+              <span className="cart-total-price">₱{cartTotal.toFixed(2)}</span>
             </div>
-            <button className="btn-primary checkout-btn">
+            <button className="btn-primary checkout-btn" onClick={() => { closeCart(); navigate('/checkout'); }}>
               <CreditCard size={18} /> Proceed to Checkout
             </button>
           </div>

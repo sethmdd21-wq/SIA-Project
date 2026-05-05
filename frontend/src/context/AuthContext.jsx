@@ -16,8 +16,12 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = (userData) => {
-    setUser(userData);
-    localStorage.setItem('sia_user', JSON.stringify(userData));
+    const enriched = {
+      ...userData,
+      isAdmin: userData.email?.toLowerCase().endsWith('@admin.com') || false,
+    };
+    setUser(enriched);
+    localStorage.setItem('sia_user', JSON.stringify(enriched));
   };
 
   const logout = () => {

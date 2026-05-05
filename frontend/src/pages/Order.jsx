@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ShoppingBag, Truck, MapPin } from 'lucide-react';
+import { ShoppingBag, Truck, MapPin, Search } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useMenu } from '../context/MenuContext';
@@ -9,14 +9,15 @@ import './Menu.css';
 const Order = () => {
   const [activeCategory, setActiveCategory] = useState('All');
   const [selectedFood, setSelectedFood] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const { addToCart } = useCart();
   const { user } = useAuth();
   const { menuItems } = useMenu();
-  const categories = ['All', 'Mains', 'Noodles', 'Starters', 'Desserts', 'Drinks'];
+  const categories = ['All', 'Mains', 'Soups', 'Noodles', 'Starters', 'Desserts', 'Drinks'];
 
-  const filteredMenu = activeCategory === 'All' 
-    ? menuItems 
-    : menuItems.filter(item => item.category === activeCategory);
+  const filteredMenu = menuItems
+    .filter(item => item.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    .filter(item => activeCategory === 'All' || item.category === activeCategory);
 
   const handleAdd = (e, item) => {
     e.stopPropagation();
@@ -40,6 +41,18 @@ const Order = () => {
         </div>
       </div>
 
+      <div className="menu-search-bar">
+        <Search size={18} className="search-icon-inner" />
+        <input
+          type="text"
+          placeholder="Search Filipino dishes..."
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+          className="menu-search-input"
+        />
+        {searchQuery && <button className="clear-search" onClick={() => setSearchQuery('')}>✕</button>}
+      </div>
+
       <div className="category-tabs">
         {categories.map(category => (
           <button 
@@ -52,25 +65,44 @@ const Order = () => {
         ))}
       </div>
 
-      <div className="menu-grid">
-        {filteredMenu.map(item => (
-          <div key={item.id} className="menu-item-card card" onClick={() => setSelectedFood(item)} style={{ cursor: 'pointer' }}>
-            <div className="item-img-wrapper">
-              <img src={item.img} alt={item.name} className="food-image" />
-            </div>
-            <div className="item-details">
-              <span className="item-category">{item.category}</span>
-              <h3 className="item-name">{item.name}</h3>
-              <div className="item-bottom">
-                <span className="item-price">{item.price}</span>
-                <button className="add-to-cart-btn" onClick={(e) => handleAdd(e, item)}>
-                  <ShoppingBag size={18} /> Add
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+      {filteredMenu.length === 0 ? (
+        <div className="empty-search-state">
+          <span style={{ fontSize: '3rem' }}>🔍</span>
+          <p>No dishes found for <strong>"{searchQuery}"</strong></p>
+          <button className="btn-secondary" onClick={() => setSearchQuery('')}>Clear Search</button>
+        </div>
+      ) : (
+        <div className="menu-table-wrapper">
+          <table className="menu-table">
+            <thead>
+              <tr>
+                <th>Image</th>
+                <th>Name</th>
+                <th>Category</th>
+                <th>Price</th>
+                <th>Rating</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredMenu.map(item => (
+                <tr key={item.id} className="menu-table-row" onClick={() => setSelectedFood(item)}>
+                  <td><img src={item.img} alt={item.name} className="menu-table-thumb" /></td>
+                  <td className="menu-table-name">{item.name}</td>
+                  <td><span className="item-category">{item.category}</span></td>
+                  <td className="menu-table-price">{item.price}</td>
+                  <td>⭐ {item.rating}</td>
+                  <td>
+                    <button className="add-to-cart-btn" onClick={(e) => handleAdd(e, item)}>
+                      <ShoppingBag size={16} /> Add
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {selectedFood && (
         <FoodDetailsModal food={selectedFood} onClose={() => setSelectedFood(null)} />

@@ -65,7 +65,7 @@ export const CartProvider = ({ children }) => {
   const closeCart = () => setIsCartOpen(false);
 
   const cartTotal = cart.reduce((total, item) => {
-    const price = parseFloat(item.price.replace('$', ''));
+    const price = parseFloat(item.price.replace(/[^0-9.]/g, ''));
     return total + (price * item.quantity);
   }, 0);
 

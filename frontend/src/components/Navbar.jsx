@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Sun, Moon, ShoppingBag, Menu, X, User } from 'lucide-react';
+import { Sun, Moon, ShoppingBag, Menu, X, User, LayoutDashboard } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
@@ -46,6 +46,13 @@ const Navbar = ({ theme, toggleTheme }) => {
             </Link>
           </li>
           
+          {user?.isAdmin && (
+            <li className="nav-item">
+              <Link to="/admin" className={`nav-links ${isActive('/admin')}`} onClick={() => setIsOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--accent-primary)' }}>
+                <LayoutDashboard size={16} /> Dashboard
+              </Link>
+            </li>
+          )}
           {!user ? (
             <>
               <li className="nav-item">

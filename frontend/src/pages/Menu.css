@@ -210,3 +210,128 @@
     justify-content: space-between;
   }
 }
+
+/* Menu Table */
+.menu-table-wrapper {
+  overflow-x: auto;
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+}
+
+.menu-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.menu-table th {
+  padding: 1rem 1.25rem;
+  text-align: left;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.menu-table td {
+  padding: 0.85rem 1.25rem;
+  border-bottom: 1px solid var(--border-color);
+  vertical-align: middle;
+}
+
+.menu-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.menu-table-row {
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.menu-table-row:hover td {
+  background: rgba(255, 90, 95, 0.04);
+}
+
+.menu-table-thumb {
+  width: 52px;
+  height: 52px;
+  border-radius: 10px;
+  object-fit: cover;
+  display: block;
+}
+
+.menu-table-name {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.menu-table-price {
+  font-weight: 700;
+  color: var(--accent-primary);
+}
+
+/* Search Bar */
+.menu-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 50px;
+  padding: 0.7rem 1.2rem;
+  margin-bottom: 1.5rem;
+  transition: border-color 0.3s ease;
+}
+
+.menu-search-bar:focus-within {
+  border-color: var(--accent-primary);
+}
+
+.search-icon-inner {
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.menu-search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-color);
+  font-size: 0.95rem;
+  font-family: inherit;
+}
+
+.clear-search {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0;
+  transition: color 0.2s ease;
+}
+
+.clear-search:hover {
+  color: var(--accent-primary);
+}
+
+/* Empty Search State */
+.empty-search-state {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 4rem 2rem;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.empty-search-state p {
+  font-size: 1.1rem;
+}
