@@ -1,0 +1,212 @@
+.menu-page {
+  padding-top: 2rem;
+  padding-bottom: 4rem;
+}
+
+.menu-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+
+.menu-header-info h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.header-icon {
+  color: var(--accent-primary);
+}
+
+.menu-header-info p {
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+}
+
+.delivery-address-box, .pickup-time-box {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: var(--bg-primary);
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+}
+
+.address-icon, .time-icon {
+  color: var(--accent-primary);
+}
+
+.address-details, .time-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.address-label, .time-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.address-value, .time-value {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.change-btn {
+  margin-left: 1rem;
+  padding: 6px 12px;
+  font-size: 0.9rem;
+}
+
+/* Categories */
+.category-tabs {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+}
+
+.category-tabs::-webkit-scrollbar {
+  height: 4px;
+}
+
+.category-tabs::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+.category-btn {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  padding: 10px 24px;
+  border-radius: 50px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: all 0.3s ease;
+  border: 1px solid transparent;
+}
+
+.category-btn:hover {
+  background: var(--border-color);
+}
+
+.category-btn.active {
+  background: var(--accent-primary);
+  color: white;
+  box-shadow: 0 4px 14px 0 rgba(255, 90, 95, 0.39);
+}
+
+/* Menu Grid */
+.menu-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 2rem;
+}
+
+.menu-item-card {
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+  background: var(--card-bg);
+  border-radius: 20px;
+  box-shadow: var(--card-shadow);
+  border: 1px solid var(--border-color);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.menu-item-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+}
+
+.item-img-wrapper {
+  height: 200px;
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+  transition: transform 0.3s ease;
+  overflow: hidden;
+}
+
+.food-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.menu-item-card:hover .item-img-wrapper {
+  transform: scale(1.03);
+}
+
+.item-details {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.item-category {
+  font-size: 0.8rem;
+  color: var(--accent-primary);
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-bottom: 0.3rem;
+}
+
+.item-name {
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+  flex: 1;
+}
+
+.item-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+}
+
+.item-price {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.add-to-cart-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--text-primary);
+  color: var(--bg-primary);
+  padding: 8px 16px;
+  border-radius: 50px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.add-to-cart-btn:hover {
+  background: var(--accent-primary);
+  color: white;
+  transform: translateY(-2px);
+}
+
+@media screen and (max-width: 768px) {
+  .menu-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .delivery-address-box, .pickup-time-box {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
