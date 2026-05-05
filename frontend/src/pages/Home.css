@@ -2,6 +2,254 @@
   width: 100%;
 }
 
+/* ── Admin Home ──────────────────────────────────── */
+.admin-home {
+  padding: 2rem 2rem 4rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.admin-welcome {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2rem 2.5rem;
+  border-radius: 20px;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.admin-welcome h1 {
+  font-size: 1.9rem;
+  margin: 0 0 0.3rem;
+}
+
+.admin-welcome p {
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.admin-goto-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 12px 24px;
+  white-space: nowrap;
+}
+
+/* Stats Grid */
+.admin-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+}
+
+.admin-stat-card {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  padding: 1.5rem 2rem;
+  border-radius: 16px;
+}
+
+.stat-icon-wrap {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.stat-blue  { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+.stat-green { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+.stat-yellow{ background: rgba(251, 191, 36, 0.15);  color: #fbbf24; }
+.stat-red   { background: rgba(255, 90, 95, 0.15);  color: var(--accent-primary); }
+
+.stat-big {
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.stat-lbl {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-top: 0.2rem;
+}
+
+/* Mid grid */
+.admin-mid-grid {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 1.5rem;
+}
+
+.admin-card {
+  padding: 1.5rem 2rem;
+  border-radius: 20px;
+}
+
+.admin-card-title {
+  font-size: 1rem;
+  margin: 0 0 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 0.8rem;
+}
+
+.top-dish-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.top-dish-img {
+  width: 72px;
+  height: 72px;
+  border-radius: 14px;
+  object-fit: cover;
+}
+
+.top-dish-name { font-size: 1.1rem; font-weight: 700; }
+.top-dish-cat  { font-size: 0.85rem; color: var(--accent-primary); margin: 0.2rem 0; }
+.top-dish-rating { font-size: 0.9rem; color: var(--text-secondary); }
+
+/* Category Breakdown */
+.category-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.cat-row {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.cat-name {
+  width: 80px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.cat-bar-track {
+  flex: 1;
+  height: 8px;
+  background: var(--bg-secondary);
+  border-radius: 50px;
+  overflow: hidden;
+}
+
+.cat-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-primary), #ff9a9e);
+  border-radius: 50px;
+  transition: width 0.6s ease;
+}
+
+.cat-count {
+  font-size: 0.85rem;
+  font-weight: 700;
+  width: 20px;
+  text-align: right;
+}
+
+/* Reviews Table */
+.admin-reviews-section {
+  overflow: hidden;
+  padding: 0;
+}
+
+.admin-reviews-section .admin-card-title {
+  padding: 1.5rem 2rem 0;
+  margin-bottom: 0;
+}
+
+.admin-reviews-table-wrapper {
+  overflow-x: auto;
+  padding: 1rem 0;
+}
+
+.admin-reviews-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.admin-reviews-table th {
+  padding: 0.75rem 1.25rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+  text-align: left;
+}
+
+.admin-reviews-table td {
+  padding: 0.85rem 1.25rem;
+  border-bottom: 1px solid var(--border-color);
+  vertical-align: middle;
+  font-size: 0.95rem;
+}
+
+.admin-reviews-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.review-dish-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-weight: 600;
+}
+
+.review-dish-thumb {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.review-comment-cell {
+  max-width: 250px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.no-reviews-admin {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem;
+  padding: 3rem;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .admin-mid-grid {
+    grid-template-columns: 1fr;
+  }
+  .admin-welcome {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
 /* Hero Section */
 .hero-section {
   padding: 6rem 0 4rem;

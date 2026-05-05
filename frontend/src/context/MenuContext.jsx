@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 
 const MenuContext = createContext();
 
@@ -48,8 +48,26 @@ const initialMenuItems = [
   { id: 29, name: 'Buko Juice', price: '₱70.00', category: 'Drinks', rating: 4.8, img: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=800&q=80', reviews: [] },
 ];
 
+const defaultCategories = ['Mains', 'Soups', 'Noodles', 'Starters', 'Desserts', 'Drinks'];
+
 export const MenuProvider = ({ children }) => {
-  const [menuItems, setMenuItems] = useState(initialMenuItems);
+  const [menuItems, setMenuItems] = useState(() => {
+    const saved = localStorage.getItem('sia_menu_items');
+    return saved ? JSON.parse(saved) : initialMenuItems;
+  });
+
+  const [categories, setCategories] = useState(() => {
+    const saved = localStorage.getItem('sia_categories');
+    return saved ? JSON.parse(saved) : defaultCategories;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('sia_menu_items', JSON.stringify(menuItems));
+  }, [menuItems]);
+
+  useEffect(() => {
+    localStorage.setItem('sia_categories', JSON.stringify(categories));
+  }, [categories]);
 
   const addReview = (foodId, rating, comment, user) => {
     setMenuItems(prevItems => prevItems.map(item => {
@@ -76,6 +94,23 @@ export const MenuProvider = ({ children }) => {
     }));
   };
 
+  const replyToReview = (foodId, reviewId, replyText) => {
+    setMenuItems(prevItems => prevItems.map(item => {
+      if (item.id === foodId) {
+        return {
+          ...item,
+          reviews: item.reviews.map(review => {
+            if (review.id === reviewId) {
+              return { ...review, reply: replyText };
+            }
+            return review;
+          })
+        };
+      }
+      return item;
+    }));
+  };
+
   const addMenuItem = (formData) => {
     setMenuItems(prev => [
       ...prev,
@@ -93,8 +128,28 @@ export const MenuProvider = ({ children }) => {
     setMenuItems(prev => prev.filter(item => item.id !== id));
   };
 
+  const addCategory = (name) => {
+    if (!categories.includes(name)) {
+      setCategories(prev => [...prev, name]);
+    }
+  };
+
+  const deleteCategory = (name) => {
+    setCategories(prev => prev.filter(cat => cat !== name));
+  };
+
   return (
-    <MenuContext.Provider value={{ menuItems, addReview, addMenuItem, editMenuItem, deleteMenuItem }}>
+    <MenuContext.Provider value={{ 
+      menuItems, 
+      categories,
+      addReview, 
+      replyToReview,
+      addMenuItem, 
+      editMenuItem, 
+      deleteMenuItem,
+      addCategory,
+      deleteCategory
+    }}>
       {children}
     </MenuContext.Provider>
   );

@@ -80,6 +80,12 @@ const FoodDetailsModal = ({ food: initialFood, onClose }) => {
                       ))}
                     </div>
                     {review.comment && <p className="review-text">{review.comment}</p>}
+                    {review.reply && (
+                      <div className="admin-reply-bubble">
+                        <div className="reply-label">Admin Response:</div>
+                        <p>{review.reply}</p>
+                      </div>
+                    )}
                   </div>
                 ))
               ) : (
