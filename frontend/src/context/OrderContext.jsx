@@ -39,7 +39,9 @@ export const OrderProvider = ({ children }) => {
   const placeOrder = async (orderData) => {
     const newOrder = {
       ...orderData,
-      id: `ORD-${Date.now()}`
+      id: `ORD-${Date.now()}`,
+      status: 'Pending',
+      createdAt: new Date().toISOString()
     };
     try {
       const response = await fetch(`${API_URL}/orders`, {
@@ -105,14 +107,15 @@ export const OrderProvider = ({ children }) => {
     }
   };
 
-  const [lastSeenOrdersCount, setLastSeenOrdersCount] = useState(0);
+  const [lastSeenOrdersCount, setLastSeenOrdersCount] = useState(() => {
+    return Number(localStorage.getItem('lastSeenOrdersCount')) || 0;
+  });
 
-  useEffect(() => {
-    setLastSeenOrdersCount(orders.filter(o => o.status === 'Pending').length);
-  }, [orders]);
+  const pendingOrdersCount = orders.filter(o => o.status === 'Pending').length;
 
   const clearNotifications = () => {
-    setLastSeenOrdersCount(orders.filter(o => o.status === 'Pending').length);
+    setLastSeenOrdersCount(pendingOrdersCount);
+    localStorage.setItem('lastSeenOrdersCount', pendingOrdersCount);
   };
 
   return (

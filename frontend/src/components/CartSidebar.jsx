@@ -59,7 +59,11 @@ const CartSidebar = () => {
               <span>Subtotal:</span>
               <span className="cart-total-price">₱{cartTotal.toFixed(2)}</span>
             </div>
-            <button className="btn-primary checkout-btn" onClick={() => { closeCart(); navigate('/checkout'); }}>
+            <button className="btn-primary checkout-btn" onClick={() => { 
+              const isTakeoutPage = window.location.pathname === '/takeout';
+              closeCart(); 
+              navigate('/checkout', { state: { type: isTakeoutPage ? 'takeout' : 'delivery' } }); 
+            }}>
               <CreditCard size={18} /> Proceed to Checkout
             </button>
           </div>

@@ -15,7 +15,7 @@ const Navbar = ({ theme, toggleTheme }) => {
   const { orders, lastSeenOrdersCount } = useOrders();
 
   const pendingCount = orders.filter(o => o.status === 'Pending').length;
-  const newOrdersNotif = pendingCount > lastSeenOrdersCount ? (pendingCount - lastSeenOrdersCount) : 0;
+  const newOrdersNotif = pendingCount > lastSeenOrdersCount ? (pendingCount - lastSeenOrdersCount) : null;
 
   const toggleMenu = () => setIsOpen(!isOpen);
 
@@ -41,23 +41,14 @@ const Navbar = ({ theme, toggleTheme }) => {
             </Link>
           </li>
 
-          {/* Customer-only links */}
           {!user?.isAdmin && (
-            <>
-              <li className="nav-item">
-                <Link to="/order" className={`nav-links ${isActive('/order')}`} onClick={() => setIsOpen(false)}>
-                  Order Delivery
-                </Link>
-              </li>
-              <li className="nav-item">
-                <Link to="/takeout" className={`nav-links ${isActive('/takeout')}`} onClick={() => setIsOpen(false)}>
-                  Takeout
-                </Link>
-              </li>
-            </>
+            <li className="nav-item">
+              <Link to="/order" className={`nav-links ${isActive('/order')}`} onClick={() => setIsOpen(false)}>
+                Order Now
+              </Link>
+            </li>
           )}
 
-          {/* Admin-only links */}
           {user?.isAdmin && (
             <li className="nav-item">
               <Link to="/admin" className={`nav-links ${isActive('/admin')}`} onClick={() => setIsOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--accent-primary)', position: 'relative' }}>

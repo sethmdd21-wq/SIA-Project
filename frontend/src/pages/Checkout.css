@@ -20,16 +20,39 @@
   font-size: 2.5rem;
 }
 
-.checkout-type-badge {
-  background: var(--accent-primary);
-  color: white;
-  padding: 0.6rem 1.2rem;
-  border-radius: 50px;
+.order-type-toggle {
+  display: flex;
+  padding: 0.4rem;
+  border-radius: 100px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  gap: 0.3rem;
+}
+
+.type-toggle-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  padding: 0.6rem 1.5rem;
+  border-radius: 100px;
   display: flex;
   align-items: center;
   gap: 0.5rem;
   font-weight: 700;
   font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.type-toggle-btn.active {
+  background: var(--accent-primary);
+  color: white;
+  box-shadow: 0 4px 15px rgba(255, 90, 95, 0.3);
+}
+
+.type-toggle-btn:not(.active):hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
 }
 
 .checkout-grid {

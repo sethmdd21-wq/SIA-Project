@@ -340,7 +340,11 @@
 
 .admin-modal--sm .admin-modal-footer {
   border-top: none;
-  padding: 0;
+  padding: 0.5rem 0;
+  background: transparent;
+  justify-content: center;
+  width: 100%;
+  border: none;
 }
 
 .danger-btn {

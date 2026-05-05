@@ -6,12 +6,14 @@ import './Auth.css';
 
 const SignUp = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, signup } = useAuth();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
-    address: '',
+    street: '',
+    barangay: '',
+    city: '',
     password: '',
     confirmPassword: ''
   });
@@ -36,15 +38,18 @@ const SignUp = () => {
           error = 'Phone must be 10 or 11 digits';
         }
         break;
-      case 'address':
-        if (!value.trim() || value.trim().length < 10) error = 'Please enter a complete delivery address';
+      case 'street':
+        if (!value.trim()) error = 'Street address is required';
+        break;
+      case 'barangay':
+        if (!value.trim()) error = 'Barangay is required';
+        break;
+      case 'city':
+        if (!value.trim()) error = 'City is required';
         break;
       case 'password':
-        // Require 8 chars, 1 letter, 1 number
-        if (value.length < 8) {
-          error = 'Password must be at least 8 characters';
-        } else if (!/[A-Za-z]/.test(value) || !/[0-9]/.test(value)) {
-          error = 'Password must contain letters and numbers';
+        if (value.length < 6) {
+          error = 'Password must be at least 6 characters';
         }
         break;
       case 'confirmPassword':
@@ -59,11 +64,6 @@ const SignUp = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     
-    if (name === 'phone' && value !== '' && !/^\d+$/.test(value)) {
-      setErrors(prev => ({ ...prev, phone: 'Only digits are allowed' }));
-      return; 
-    }
-
     setFormData({ ...formData, [name]: value });
     
     const errorMsg = validate(name, value);
@@ -73,21 +73,25 @@ const SignUp = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const newErrors = {};
+    
+    // Validate all fields
     Object.keys(formData).forEach(key => {
       const error = validate(key, formData[key]);
       if (error) newErrors[key] = error;
     });
 
-    if (Object.keys(newErrors).length > 0 || Object.values(formData).some(v => v === '')) {
+    if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
+
+    const fullAddress = `${formData.street}, Brgy. ${formData.barangay}, ${formData.city}`;
 
     const result = await signup({
       name: formData.name,
       email: formData.email,
       phone: formData.phone,
-      address: formData.address,
+      address: fullAddress,
       password: formData.password
     });
     
@@ -100,7 +104,7 @@ const SignUp = () => {
 
   return (
     <div className="auth-container animate-fade-in">
-      <div className="auth-card glass-panel" style={{ maxWidth: '550px' }}>
+      <div className="auth-card glass-panel" style={{ maxWidth: '600px' }}>
         <div className="auth-header">
           <h2>Create an Account</h2>
           <p>Join SIA Food for fast delivery and easy takeout</p>
@@ -161,19 +165,43 @@ const SignUp = () => {
           </div>
 
           <div className="input-group">
-            <div className="input-icon-wrapper" style={{ alignItems: 'flex-start', paddingTop: '12px' }}>
+            <div className="input-icon-wrapper">
               <MapPin size={20} className="input-icon" />
-              <textarea
-                name="address"
-                placeholder="Full Delivery Address"
-                rows="3"
-                className={`input-field auth-input ${errors.address ? 'error-input' : ''}`}
-                style={{ resize: 'none' }}
-                value={formData.address}
+              <input
+                type="text"
+                name="street"
+                placeholder="Street Address / House No."
+                className={`input-field auth-input ${errors.street ? 'error-input' : ''}`}
+                value={formData.street}
                 onChange={handleChange}
-              ></textarea>
+              />
             </div>
-            {errors.address && <span className="error-text"><AlertCircle size={14}/> {errors.address}</span>}
+            {errors.street && <span className="error-text"><AlertCircle size={14}/> {errors.street}</span>}
+          </div>
+
+          <div className="form-row">
+            <div className="input-group">
+              <input
+                type="text"
+                name="barangay"
+                placeholder="Barangay"
+                className={`input-field auth-input ${errors.barangay ? 'error-input' : ''}`}
+                value={formData.barangay}
+                onChange={handleChange}
+              />
+              {errors.barangay && <span className="error-text"><AlertCircle size={14}/> {errors.barangay}</span>}
+            </div>
+            <div className="input-group">
+              <input
+                type="text"
+                name="city"
+                placeholder="City / Municipality"
+                className={`input-field auth-input ${errors.city ? 'error-input' : ''}`}
+                value={formData.city}
+                onChange={handleChange}
+              />
+              {errors.city && <span className="error-text"><AlertCircle size={14}/> {errors.city}</span>}
+            </div>
           </div>
 
           <div className="form-row">

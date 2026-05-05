@@ -12,7 +12,6 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
 import Order from './pages/Order';
-import Takeout from './pages/Takeout';
 import Profile from './pages/Profile';
 import Checkout from './pages/Checkout';
 import AdminDashboard from './pages/AdminDashboard';
@@ -48,11 +47,6 @@ function App() {
                   <Route path="/order" element={
                     <ProtectedRoute>
                       <Order />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/takeout" element={
-                    <ProtectedRoute>
-                      <Takeout />
                     </ProtectedRoute>
                   } />
                   <Route path="/profile" element={

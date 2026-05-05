@@ -72,13 +72,31 @@ app.put('/api/users/:email', async (req, res) => {
   }
 });
 
+// Delete Account
+app.delete('/api/users/:email', async (req, res) => {
+  const { email } = req.params;
+  try {
+    await db.query('DELETE FROM users WHERE email = ?', [email]);
+    res.json({ message: 'Account deleted permanently' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // --- MENU ENDPOINTS ---
 
-// Get all food
+// Get all food with reviews
 app.get('/api/menu', async (req, res) => {
   try {
     const [rows] = await db.query('SELECT * FROM menu_items');
-    res.json(rows);
+    const [reviews] = await db.query('SELECT * FROM reviews ORDER BY date DESC');
+    
+    const menuWithReviews = rows.map(item => ({
+      ...item,
+      reviews: reviews.filter(r => r.dish_id === item.id)
+    }));
+    
+    res.json(menuWithReviews);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -124,10 +142,16 @@ app.delete('/api/menu/:id', async (req, res) => {
 
 // --- ORDER ENDPOINTS ---
 
-// Get all orders (for Admin)
+// Get all orders with user details (for Admin)
 app.get('/api/orders', async (req, res) => {
   try {
-    const [rows] = await db.query('SELECT * FROM orders ORDER BY createdAt DESC');
+    const [rows] = await db.query(`
+      SELECT o.*, u.name as user_name, u.phone as user_phone, u.address as user_address
+      FROM orders o
+      LEFT JOIN users u ON o.user_email = u.email
+      ORDER BY o.createdAt DESC
+    `);
+
     const orders = rows.map(o => {
       let items = [];
       try {
@@ -135,7 +159,12 @@ app.get('/api/orders', async (req, res) => {
       } catch (e) {
         console.error('Failed to parse order items:', e);
       }
-      return { ...o, items };
+      return { 
+        ...o, 
+        items,
+        user: { name: o.user_name || 'Unknown User', email: o.user_email, phone: o.user_phone },
+        details: { phone: o.user_phone || 'No Phone' } // Satisfy frontend expectations
+      };
     });
     res.json(orders);
   } catch (err) {
@@ -145,7 +174,8 @@ app.get('/api/orders', async (req, res) => {
 
 // Place order
 app.post('/api/orders', async (req, res) => {
-  const { id, user_email, items, total, type, paymentMethod, paymentStatus } = req.body;
+  const { id, user, items, total, type, paymentMethod, paymentStatus } = req.body;
+  const user_email = user?.email;
   try {
     await db.query(
       'INSERT INTO orders (id, user_email, items, total, type, paymentMethod, paymentStatus) VALUES (?, ?, ?, ?, ?, ?, ?)',

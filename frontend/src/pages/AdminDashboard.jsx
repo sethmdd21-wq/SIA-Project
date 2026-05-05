@@ -24,7 +24,13 @@ const AdminDashboard = () => {
   const [showRiderModal, setShowRiderModal] = useState(false);
   
   // Notification States (Reviews still local as they are in MenuContext)
-  const [hasSeenUnrepliedReviews, setHasSeenUnrepliedReviews] = useState(false);
+  const [hasSeenUnrepliedReviews, setHasSeenUnrepliedReviews] = useState(() => {
+    return localStorage.getItem('hasSeenUnrepliedReviews') === 'true';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('hasSeenUnrepliedReviews', hasSeenUnrepliedReviews);
+  }, [hasSeenUnrepliedReviews]);
 
   const pendingOrders = orders.filter(o => o.status === 'Pending');
   const unrepliedReviews = menuItems.some(item => item.reviews?.some(r => !r.reply));
@@ -42,9 +48,15 @@ const AdminDashboard = () => {
     item.category.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const allReviews = menuItems.flatMap(item => 
-    (item.reviews || []).map(review => ({ ...review, dishId: item.id, dishName: item.name, dishImg: item.img }))
-  ).sort((a, b) => (b.id || 0) - (a.id || 0));
+  const allReviews = (menuItems || []).flatMap(item => 
+    (item?.reviews || []).map(review => ({ ...review, dishId: item?.id, dishName: item?.name, dishImg: item?.img }))
+  ).sort((a, b) => (Number(b?.id) || 0) - (Number(a?.id) || 0));
+
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Recent';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
 
   const openAdd = () => {
     setEditingItem(null);
@@ -195,7 +207,7 @@ const AdminDashboard = () => {
           <span className="stat-label">Available Riders</span>
         </div>
         <div className="stat-card">
-          <span className="stat-value">{menuItems.length > 0 ? (menuItems.reduce((s,i)=>s+i.rating,0)/menuItems.length).toFixed(1) : '—'}</span>
+          <span className="stat-value">{menuItems.length > 0 ? (menuItems.reduce((s, i) => s + Number(i.rating || 0), 0) / menuItems.length).toFixed(1) : '0.0'}</span>
           <span className="stat-label">Avg. Rating</span>
         </div>
       </div>
@@ -287,28 +299,28 @@ const AdminDashboard = () => {
                 <tbody>
                   {orders.filter(o => o.status !== 'Delivered' && o.status !== 'Cancelled').map(order => (
                     <tr key={order.id}>
-                      <td className="order-id-cell">{order.id}</td>
+                      <td className="order-id-cell">{order?.id || 'N/A'}</td>
                       <td>
                         <div className="customer-cell">
-                          <strong>{order.user.name}</strong>
-                          <span>{order.details.phone}</span>
+                          <strong>{order?.user?.name || 'Unknown User'}</strong>
+                          <span>{order?.details?.phone || order?.user?.phone || 'No Phone'}</span>
                         </div>
                       </td>
                       <td>
-                        <span className={`type-badge ${order.type.toLowerCase()}`}>
-                          {order.type === 'Delivery' ? <Truck size={14} /> : <Clock size={14} />}
-                          {order.type}
+                        <span className={`type-badge ${(order?.type || 'Delivery').toLowerCase()}`}>
+                          {order?.type === 'Delivery' ? <Truck size={14} /> : <Clock size={14} />}
+                          {order?.type || 'Delivery'}
                         </span>
                       </td>
                       <td className="price-cell">
-                        ₱{order.total.toFixed(2)}
-                        <div className={`payment-status-badge ${order.paymentStatus?.toLowerCase() || 'unpaid'}`}>
-                          {order.paymentMethod === 'GCash' ? (order.paymentStatus === 'Paid' ? 'PAID' : 'PENDING') : 'COD'}
+                        ₱{(Number(order?.total) || 0).toFixed(2)}
+                        <div className={`payment-status-badge ${order?.paymentStatus?.toLowerCase() || 'pending'}`}>
+                          {order?.paymentMethod === 'GCash' ? (order?.paymentStatus === 'Paid' ? 'PAID' : 'PENDING') : (order?.paymentMethod || 'COD')}
                         </div>
                       </td>
                       <td>
-                        <span className="status-indicator" style={{ background: getStatusColor(order.status) }}>
-                          {order.status}
+                        <span className="status-indicator" style={{ background: getStatusColor(order?.status || 'Pending') }}>
+                          {order?.status || 'Pending'}
                         </span>
                       </td>
                       <td>
@@ -366,13 +378,13 @@ const AdminDashboard = () => {
                 <tbody>
                   {orders.filter(o => o.status === 'Delivered' || o.status === 'Cancelled').map(order => (
                     <tr key={order.id}>
-                      <td className="order-id-cell">{order.id}</td>
-                      <td><strong>{order.user.name}</strong></td>
-                      <td>{order.type}</td>
-                      <td className="price-cell">₱{order.total.toFixed(2)}</td>
+                      <td className="order-id-cell">{order?.id || 'N/A'}</td>
+                      <td><strong>{order?.user?.name || 'Unknown User'}</strong></td>
+                      <td>{order?.type || 'N/A'}</td>
+                      <td className="price-cell">₱{(Number(order?.total) || 0).toFixed(2)}</td>
                       <td>
-                        <span className="status-indicator" style={{ background: getStatusColor(order.status) }}>
-                          {order.status}
+                        <span className="status-indicator" style={{ background: getStatusColor(order?.status || 'Pending') }}>
+                          {order?.status || 'Pending'}
                         </span>
                       </td>
                       <td>
@@ -490,7 +502,7 @@ const AdminDashboard = () => {
                     <img src={review.dishImg} alt={review.dishName} className="review-dish-thumb" />
                     <div>
                       <h4>{review.dishName}</h4>
-                      <span className="review-meta">by {review.user} on {review.date}</span>
+                      <span className="review-meta">by {review.user_name || 'Anonymous'} on {formatDate(review.date)}</span>
                     </div>
                   </div>
                   <div className="review-rating-stars">
@@ -639,8 +651,8 @@ const AdminDashboard = () => {
             <h3>Delete this dish?</h3>
             <p>This action cannot be undone.</p>
             <div className="admin-modal-footer">
-              <button className="btn-secondary" onClick={() => setDeleteConfirm(null)}>Cancel</button>
-              <button className="btn-primary danger-btn" onClick={() => handleDelete(deleteConfirm)}>Yes, Delete</button>
+              <button className="btn-secondary" onClick={() => setDeleteConfirm(null)}>No</button>
+              <button className="btn-primary danger-btn" onClick={() => handleDelete(deleteConfirm)}>Yes</button>
             </div>
           </div>
         </div>,

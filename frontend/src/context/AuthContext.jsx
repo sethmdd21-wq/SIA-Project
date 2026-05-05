@@ -55,12 +55,12 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem('sia_user', JSON.stringify(newUser));
         return { success: true };
       } else {
-        const error = await response.json();
-        return { success: false, message: error.message || 'Signup failed' };
+        const errorData = await response.json();
+        return { success: false, message: errorData.error || errorData.message || 'Signup failed' };
       }
     } catch (err) {
       console.error('Signup error:', err);
-      return { success: false, message: 'Server connection failed. Is the backend running?' };
+      return { success: false, message: "Oops! We're having a bit of trouble connecting to our kitchen. Please try again in a moment." };
     }
   };
 
@@ -85,9 +85,18 @@ export const AuthProvider = ({ children }) => {
     return { success: false };
   };
 
-  const deleteAccount = () => {
-    setUser(null);
-    localStorage.removeItem('sia_user');
+  const deleteAccount = async () => {
+    try {
+      await fetch(`${API_URL}/users/${user.email}`, {
+        method: 'DELETE'
+      });
+      setUser(null);
+      localStorage.removeItem('sia_user');
+      return { success: true };
+    } catch (err) {
+      console.error('Delete account error:', err);
+      return { success: false };
+    }
   };
 
   return (

@@ -23,8 +23,14 @@ const AdminHome = ({ user, menuItems = [] }) => {
   // Flatten all reviews across all items, newest first
   const allReviews = menuItems
     .flatMap(item => (item.reviews || []).map(r => ({ ...r, dishName: item.name, dishImg: item.img })))
-    .sort((a, b) => (b.id || 0) - (a.id || 0))
+    .sort((a, b) => (Number(b.id) || 0) - (Number(a.id) || 0))
     .slice(0, 10);
+
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Recent';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
 
   return (
     <div className="admin-home animate-fade-in">
@@ -136,14 +142,14 @@ const AdminHome = ({ user, menuItems = [] }) => {
                         <span>{r.dishName}</span>
                       </div>
                     </td>
-                    <td>{r.user}</td>
+                    <td>{r.user_name || 'Anonymous'}</td>
                     <td>
                       <span className="review-stars-cell">
-                        {'⭐'.repeat(r.rating)}
+                        {'⭐'.repeat(Number(r.rating) || 5)}
                       </span>
                     </td>
                     <td className="review-comment-cell">{r.comment || <em style={{ opacity: 0.5 }}>No comment</em>}</td>
-                    <td>{r.date}</td>
+                    <td>{formatDate(r.date)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -195,10 +201,7 @@ const Home = () => {
             </p>
             <div className="hero-buttons">
               <Link to="/order" className="btn-primary hero-btn">
-                Order Delivery <ArrowRight size={18} />
-              </Link>
-              <Link to="/takeout" className="btn-secondary hero-btn">
-                Pick up Takeout
+                Order Now <ArrowRight size={18} />
               </Link>
             </div>
           </div>

@@ -12,7 +12,7 @@ const Checkout = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const isTakeout = location.state?.type === 'takeout';
+  const [orderType, setOrderType] = useState(location.state?.type || 'delivery'); // 'delivery' or 'takeout'
 
   const [formData, setFormData] = useState({
     address: user?.address || '',
@@ -24,6 +24,8 @@ const Checkout = () => {
   const [orderComplete, setOrderComplete] = useState(null);
   const [showGCashModal, setShowGCashModal] = useState(false);
   const [phoneError, setPhoneError] = useState('');
+
+  const isTakeout = orderType === 'takeout';
 
   if (cart.length === 0 && !orderComplete) {
     return (
@@ -57,12 +59,11 @@ const Checkout = () => {
     processOrder();
   };
 
-  const processOrder = () => {
+  const processOrder = async () => {
     setIsProcessing(true);
     setShowGCashModal(false);
 
-    // Simulate network delay
-    setTimeout(() => {
+    try {
       const orderData = {
         user: { name: user.name, email: user.email },
         items: cart,
@@ -73,11 +74,19 @@ const Checkout = () => {
         paymentMethod: formData.paymentMethod
       };
 
-      const newOrder = placeOrder(orderData);
-      clearCart();
+      const newOrder = await placeOrder(orderData);
+      if (newOrder) {
+        clearCart();
+        setOrderComplete(newOrder);
+      } else {
+        alert('Failed to place order. Please check your connection and try again.');
+      }
+    } catch (err) {
+      console.error('Order processing error:', err);
+      alert('An unexpected error occurred. Please try again.');
+    } finally {
       setIsProcessing(false);
-      setOrderComplete(newOrder);
-    }, 2000);
+    }
   };
 
   if (orderComplete) {
@@ -106,9 +115,19 @@ const Checkout = () => {
     <div className="checkout-page container animate-fade-in">
       <div className="checkout-header">
         <h1><CreditCard size={32} /> Checkout</h1>
-        <div className="checkout-type-badge">
-          {isTakeout ? <Clock size={16} /> : <Truck size={16} />}
-          {isTakeout ? 'Takeout Order' : 'Delivery Order'}
+        <div className="order-type-toggle glass-panel">
+          <button 
+            className={`type-toggle-btn ${!isTakeout ? 'active' : ''}`}
+            onClick={() => setOrderType('delivery')}
+          >
+            <Truck size={18} /> Delivery
+          </button>
+          <button 
+            className={`type-toggle-btn ${isTakeout ? 'active' : ''}`}
+            onClick={() => setOrderType('takeout')}
+          >
+            <ShoppingBag size={18} /> Pickup
+          </button>
         </div>
       </div>
 

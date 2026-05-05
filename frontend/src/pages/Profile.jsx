@@ -68,14 +68,18 @@ const Profile = () => {
     setIsEditing(false);
   };
 
-  const handleDeleteSubmit = (e) => {
+  const handleDeleteSubmit = async (e) => {
     e.preventDefault();
-    if (deletePassword === 'password123') { // Dummy check since no real backend
-      deleteAccount();
-    } else if (deletePassword.length < 1) {
+    if (deletePassword.length < 1) {
       setDeleteError('Please enter your password to confirm.');
+      return;
+    }
+    
+    const result = await deleteAccount();
+    if (result.success) {
+      setShowDeleteModal(false);
     } else {
-      deleteAccount();
+      setDeleteError('Failed to delete account. Please try again.');
     }
   };
 
@@ -202,9 +206,9 @@ const Profile = () => {
                       <div className="order-item-header">
                         <span className="order-id">{order.id}</span>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-                          <span className={`order-status-badge ${order.status.toLowerCase().replace(/ /g, '-')}`}>
-                            {getStatusIcon(order.status)}
-                            {order.status}
+                          <span className={`order-status-badge ${(order.status || 'Pending').toLowerCase().replace(/ /g, '-')}`}>
+                            {getStatusIcon(order.status || 'Pending')}
+                            {order.status || 'Pending'}
                           </span>
                           {order.status === 'Delivered' && (
                             <button className="delete-order-sm" onClick={() => deleteOrder(order.id)} title="Remove from history">
@@ -215,12 +219,12 @@ const Profile = () => {
                       </div>
                       <div className="order-item-body">
                         <div className="order-items-summary">
-                          {order.items.slice(0, 2).map(item => item.name).join(', ')}
-                          {order.items.length > 2 && ` +${order.items.length - 2} more`}
+                          {(order.items || []).slice(0, 2).map(item => item.name).join(', ')}
+                          {(order.items || []).length > 2 && ` +${order.items.length - 2} more`}
                         </div>
                         <div className="order-total-row">
-                          <span className="order-date">{new Date(order.createdAt).toLocaleDateString()}</span>
-                          <span className="order-price">₱{order.total.toFixed(2)}</span>
+                          <span className="order-date">{new Date(order.createdAt || Date.now()).toLocaleDateString()}</span>
+                          <span className="order-price">₱{Number(order.total || 0).toFixed(2)}</span>
                         </div>
                       </div>
                     </div>
