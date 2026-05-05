@@ -1,13 +1,17 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useMenu } from '../context/MenuContext';
-import { PlusCircle, Edit2, Trash2, X, Save, LayoutDashboard, UtensilsCrossed, Search, MessageSquare, Tag, Upload, Reply } from 'lucide-react';
+import { useOrders } from '../context/OrderContext';
+import { PlusCircle, Edit2, Trash2, X, Save, LayoutDashboard, UtensilsCrossed, Search, MessageSquare, Tag, Upload, Reply, ShoppingBag, Truck, CheckCircle, Clock } from 'lucide-react';
 import './AdminDashboard.css';
 
 const emptyForm = { name: '', price: '', category: 'Mains', img: '', rating: 4.5 };
 
 const AdminDashboard = () => {
   const { menuItems, categories, addMenuItem, editMenuItem, deleteMenuItem, addCategory, deleteCategory, replyToReview } = useMenu();
-  const [activeTab, setActiveTab] = useState('menu'); // 'menu', 'categories', 'reviews'
+  const { orders, riders, updateOrderStatus, addRider, deleteRider, deleteOrder, toggleRiderStatus, lastSeenOrdersCount, clearNotifications } = useOrders();
+  const [activeTab, setActiveTab] = useState('menu'); // 'menu', 'categories', 'reviews', 'orders', 'riders'
+  const [showHistory, setShowHistory] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [form, setForm] = useState(emptyForm);
@@ -16,6 +20,21 @@ const AdminDashboard = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [newCategory, setNewCategory] = useState('');
   const [replyText, setReplyText] = useState({});
+  const [riderForm, setRiderForm] = useState({ name: '', phone: '', vehicle: 'Motorcycle', plate: '', model: '' });
+  const [showRiderModal, setShowRiderModal] = useState(false);
+  
+  // Notification States (Reviews still local as they are in MenuContext)
+  const [hasSeenUnrepliedReviews, setHasSeenUnrepliedReviews] = useState(false);
+
+  const pendingOrders = orders.filter(o => o.status === 'Pending');
+  const unrepliedReviews = menuItems.some(item => item.reviews?.some(r => !r.reply));
+
+  const handleTabClick = (tab) => {
+    setActiveTab(tab);
+    if (tab === 'orders') clearNotifications();
+    if (tab === 'reviews') setHasSeenUnrepliedReviews(true);
+  };
+
   const fileInputRef = useRef(null);
 
   const filteredItems = menuItems.filter(item =>
@@ -94,8 +113,41 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleStatusChange = (orderId, status, riderId = null) => {
+    updateOrderStatus(orderId, status, riderId);
+  };
+
+  const [riderPhoneError, setRiderPhoneError] = useState('');
+
+  const handleAddRider = (e) => {
+    e.preventDefault();
+    
+    const phonePattern = /^09\d{9}$/;
+    if (!phonePattern.test(riderForm.phone)) {
+      setRiderPhoneError('Please enter a valid 11-digit phone number starting with 09');
+      return;
+    }
+    setRiderPhoneError('');
+
+    addRider(riderForm);
+    setRiderForm({ name: '', phone: '', vehicle: 'Motorcycle', plate: '', model: '' });
+    setShowRiderModal(false);
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'Pending': return '#f59e0b';
+      case 'Preparing': return '#3b82f6';
+      case 'Out for Delivery': return '#8b5cf6';
+      case 'Delivered': return '#10b981';
+      case 'Cancelled': return '#ef4444';
+      default: return 'var(--text-secondary)';
+    }
+  };
+
   return (
-    <div className="admin-page container animate-fade-in">
+    <>
+      <div className="admin-page container animate-fade-in">
       <div className="admin-page-header">
         <div className="admin-title-group">
           <LayoutDashboard size={32} className="admin-title-icon" />
@@ -105,14 +157,26 @@ const AdminDashboard = () => {
           </div>
         </div>
         <div className="admin-tabs">
-          <button className={`admin-tab ${activeTab === 'menu' ? 'active' : ''}`} onClick={() => setActiveTab('menu')}>
+          <button className={`admin-tab ${activeTab === 'menu' ? 'active' : ''}`} onClick={() => handleTabClick('menu')}>
             <UtensilsCrossed size={18} /> Menu
           </button>
-          <button className={`admin-tab ${activeTab === 'categories' ? 'active' : ''}`} onClick={() => setActiveTab('categories')}>
+          <button className={`admin-tab ${activeTab === 'orders' ? 'active' : ''}`} onClick={() => handleTabClick('orders')}>
+            <ShoppingBag size={18} /> Orders
+            {pendingOrders.length > lastSeenOrdersCount && (
+              <span className="admin-tab-badge">{pendingOrders.length - lastSeenOrdersCount}</span>
+            )}
+          </button>
+          <button className={`admin-tab ${activeTab === 'riders' ? 'active' : ''}`} onClick={() => handleTabClick('riders')}>
+            <Truck size={18} /> Riders
+          </button>
+          <button className={`admin-tab ${activeTab === 'categories' ? 'active' : ''}`} onClick={() => handleTabClick('categories')}>
             <Tag size={18} /> Categories
           </button>
-          <button className={`admin-tab ${activeTab === 'reviews' ? 'active' : ''}`} onClick={() => setActiveTab('reviews')}>
+          <button className={`admin-tab ${activeTab === 'reviews' ? 'active' : ''}`} onClick={() => handleTabClick('reviews')}>
             <MessageSquare size={18} /> Reviews
+            {unrepliedReviews && !hasSeenUnrepliedReviews && (
+              <span className="admin-tab-badge dot"></span>
+            )}
           </button>
         </div>
       </div>
@@ -123,12 +187,12 @@ const AdminDashboard = () => {
           <span className="stat-label">Total Dishes</span>
         </div>
         <div className="stat-card">
-          <span className="stat-value">{categories.length}</span>
-          <span className="stat-label">Categories</span>
+          <span className="stat-value">{orders.filter(o => o.status !== 'Delivered').length}</span>
+          <span className="stat-label">Active Orders</span>
         </div>
         <div className="stat-card">
-          <span className="stat-value">{menuItems.reduce((s, i) => s + i.reviews.length, 0)}</span>
-          <span className="stat-label">Total Reviews</span>
+          <span className="stat-value">{riders.filter(r => r.status === 'Available').length}</span>
+          <span className="stat-label">Available Riders</span>
         </div>
         <div className="stat-card">
           <span className="stat-value">{menuItems.length > 0 ? (menuItems.reduce((s,i)=>s+i.rating,0)/menuItems.length).toFixed(1) : '—'}</span>
@@ -185,6 +249,195 @@ const AdminDashboard = () => {
                           <Edit2 size={16} />
                         </button>
                         <button className="delete-icon-btn" onClick={() => setDeleteConfirm(item.id)} title="Delete">
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'orders' && (
+        <div className="admin-section glass-panel">
+          <div className="admin-section-header">
+            <div className="admin-tab-subgroup">
+              <button className={`admin-tab-sm ${!showHistory ? 'active' : ''}`} onClick={() => setShowHistory(false)}>Active Orders</button>
+              <button className={`admin-tab-sm ${showHistory ? 'active' : ''}`} onClick={() => setShowHistory(true)}>Order History</button>
+            </div>
+          </div>
+          
+          <div className="admin-table-wrapper">
+            {!showHistory ? (
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Order ID</th>
+                    <th>Customer</th>
+                    <th>Type</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                    <th>Rider</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {orders.filter(o => o.status !== 'Delivered' && o.status !== 'Cancelled').map(order => (
+                    <tr key={order.id}>
+                      <td className="order-id-cell">{order.id}</td>
+                      <td>
+                        <div className="customer-cell">
+                          <strong>{order.user.name}</strong>
+                          <span>{order.details.phone}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <span className={`type-badge ${order.type.toLowerCase()}`}>
+                          {order.type === 'Delivery' ? <Truck size={14} /> : <Clock size={14} />}
+                          {order.type}
+                        </span>
+                      </td>
+                      <td className="price-cell">
+                        ₱{order.total.toFixed(2)}
+                        <div className={`payment-status-badge ${order.paymentStatus?.toLowerCase() || 'unpaid'}`}>
+                          {order.paymentMethod === 'GCash' ? (order.paymentStatus === 'Paid' ? 'PAID' : 'PENDING') : 'COD'}
+                        </div>
+                      </td>
+                      <td>
+                        <span className="status-indicator" style={{ background: getStatusColor(order.status) }}>
+                          {order.status}
+                        </span>
+                      </td>
+                      <td>
+                        {order.type === 'Delivery' ? (
+                          order.riderId ? (
+                            <div className="rider-cell">
+                              <strong>{riders.find(r => r.id === order.riderId)?.name}</strong>
+                            </div>
+                          ) : (
+                            <select 
+                              className="admin-select-sm"
+                              onChange={(e) => handleStatusChange(order.id, 'Out for Delivery', parseInt(e.target.value))}
+                              defaultValue=""
+                            >
+                              <option value="" disabled>Assign Rider</option>
+                              {riders.filter(r => r.status === 'Available').map(r => (
+                                <option key={r.id} value={r.id}>{r.name} ({r.vehicle})</option>
+                              ))}
+                            </select>
+                          )
+                        ) : '—'}
+                      </td>
+                      <td>
+                        <div className="status-actions">
+                          {order.status === 'Pending' && (
+                            <button className="btn-status prepare" onClick={() => handleStatusChange(order.id, 'Preparing')}>Prepare</button>
+                          )}
+                          {order.status === 'Preparing' && order.type === 'Takeout' && (
+                            <button className="btn-status deliver" onClick={() => handleStatusChange(order.id, 'Delivered')}>Ready</button>
+                          )}
+                          {order.status === 'Out for Delivery' && (
+                            <button className="btn-status deliver" onClick={() => handleStatusChange(order.id, 'Delivered')}>Done</button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {orders.filter(o => o.status !== 'Delivered' && o.status !== 'Cancelled').length === 0 && (
+                    <tr><td colSpan="7" className="empty-table-cell">No active orders</td></tr>
+                  )}
+                </tbody>
+              </table>
+            ) : (
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Order ID</th>
+                    <th>Customer</th>
+                    <th>Type</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {orders.filter(o => o.status === 'Delivered' || o.status === 'Cancelled').map(order => (
+                    <tr key={order.id}>
+                      <td className="order-id-cell">{order.id}</td>
+                      <td><strong>{order.user.name}</strong></td>
+                      <td>{order.type}</td>
+                      <td className="price-cell">₱{order.total.toFixed(2)}</td>
+                      <td>
+                        <span className="status-indicator" style={{ background: getStatusColor(order.status) }}>
+                          {order.status}
+                        </span>
+                      </td>
+                      <td>
+                        <button className="delete-icon-btn" onClick={() => deleteOrder(order.id)} title="Delete from History">
+                          <Trash2 size={16} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {orders.filter(o => o.status === 'Delivered' || o.status === 'Cancelled').length === 0 && (
+                    <tr><td colSpan="6" className="empty-table-cell">No order history</td></tr>
+                  )}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'riders' && (
+        <div className="admin-section glass-panel">
+          <div className="admin-section-header">
+            <h2><Truck size={22} /> Rider Management ({riders.length})</h2>
+            <button className="btn-primary" onClick={() => setShowRiderModal(true)}>
+              <PlusCircle size={18} /> Add Rider
+            </button>
+          </div>
+          <div className="admin-table-wrapper">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Contact</th>
+                  <th>Vehicle Details</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {riders.map(rider => (
+                  <tr key={rider.id}>
+                    <td><strong>{rider.name}</strong></td>
+                    <td>{rider.phone}</td>
+                    <td>
+                      <div className="vehicle-cell">
+                        <strong>{rider.vehicle}</strong>
+                        {rider.model && <span>{rider.model} ({rider.plate})</span>}
+                      </div>
+                    </td>
+                    <td>
+                      <span className={`rider-status ${rider.status.toLowerCase()}`}>
+                        {rider.status}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="action-btns">
+                        <button 
+                          className={`btn-status-toggle ${rider.status === 'Available' ? 'busy' : 'available'}`}
+                          onClick={() => toggleRiderStatus(rider.id)}
+                          title={`Set as ${rider.status === 'Available' ? 'Busy' : 'Available'}`}
+                        >
+                          {rider.status === 'Available' ? <Clock size={14} /> : <CheckCircle size={14} />}
+                          {rider.status === 'Available' ? 'Set Busy' : 'Set Avail'}
+                        </button>
+                        <button className="delete-icon-btn" onClick={() => deleteRider(rider.id)}>
                           <Trash2 size={16} />
                         </button>
                       </div>
@@ -271,8 +524,10 @@ const AdminDashboard = () => {
         </div>
       )}
 
-      {/* Add / Edit Modal */}
-      {showModal && (
+      </div>
+
+      {/* Add / Edit Dish Modal */}
+      {showModal && createPortal(
         <div className="admin-modal-overlay" onClick={() => setShowModal(false)}>
           <div className="admin-modal glass-panel animate-scale-in" onClick={e => e.stopPropagation()}>
             <div className="admin-modal-header">
@@ -282,7 +537,7 @@ const AdminDashboard = () => {
             <form onSubmit={handleSubmit} className="admin-form">
               <div className="admin-form-group">
                 <label>Dish Name</label>
-                <input className={`input-field ${errors.name ? 'error-input' : ''}`} placeholder="e.g. Kare-Kare" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
+                <input className={`input-field ${errors.name ? 'error-input' : ''}`} placeholder="e.g. Special Adobo" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
                 {errors.name && <span className="admin-error">{errors.name}</span>}
               </div>
               <div className="admin-form-row">
@@ -317,11 +572,67 @@ const AdminDashboard = () => {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.getElementById('modal-root')
+      )}
+
+      {/* Add Rider Modal */}
+      {showRiderModal && createPortal(
+        <div className="admin-modal-overlay" onClick={() => setShowRiderModal(false)}>
+          <div className="admin-modal glass-panel animate-scale-in" onClick={e => e.stopPropagation()}>
+            <div className="admin-modal-header">
+              <h3>Add New Rider</h3>
+              <button className="close-btn" onClick={() => setShowRiderModal(false)}><X size={20} /></button>
+            </div>
+            <form onSubmit={handleAddRider} className="admin-form">
+              <div className="admin-form-group">
+                <label>Rider Name</label>
+                <input className="input-field" placeholder="Full Name" value={riderForm.name} onChange={e => setRiderForm({...riderForm, name: e.target.value})} required />
+              </div>
+              <div className="admin-form-group">
+                <label>Phone Number (09XXXXXXXXX)</label>
+                <input 
+                  className={`input-field ${riderPhoneError ? 'error-input' : ''}`} 
+                  required 
+                  placeholder="09123456789" 
+                  value={riderForm.phone} 
+                  onChange={e => {
+                    setRiderForm({...riderForm, phone: e.target.value});
+                    setRiderPhoneError('');
+                  }} 
+                />
+                {riderPhoneError && <span className="admin-error">{riderPhoneError}</span>}
+              </div>
+              <div className="admin-form-row">
+                <div className="admin-form-group">
+                  <label>Vehicle Type</label>
+                  <select className="input-field admin-select" value={riderForm.vehicle} onChange={e => setRiderForm({...riderForm, vehicle: e.target.value})}>
+                    <option value="Motorcycle">Motorcycle</option>
+                    <option value="Bicycle">Bicycle</option>
+                    <option value="Car">Car</option>
+                  </select>
+                </div>
+                <div className="admin-form-group">
+                  <label>Plate Number</label>
+                  <input className="input-field" placeholder="ABC-1234" value={riderForm.plate} onChange={e => setRiderForm({...riderForm, plate: e.target.value})} />
+                </div>
+              </div>
+              <div className="admin-form-group">
+                <label>Vehicle Model</label>
+                <input className="input-field" placeholder="e.g. Honda Click 125i" value={riderForm.model} onChange={e => setRiderForm({...riderForm, model: e.target.value})} />
+              </div>
+              <div className="admin-modal-footer">
+                <button type="button" className="btn-secondary" onClick={() => setShowRiderModal(false)}>Cancel</button>
+                <button type="submit" className="btn-primary">Add Rider</button>
+              </div>
+            </form>
+          </div>
+        </div>,
+        document.getElementById('modal-root')
       )}
 
       {/* Delete Confirm Modal */}
-      {deleteConfirm && (
+      {deleteConfirm && createPortal(
         <div className="admin-modal-overlay" onClick={() => setDeleteConfirm(null)}>
           <div className="admin-modal admin-modal--sm glass-panel animate-scale-in" onClick={e => e.stopPropagation()}>
             <div className="delete-confirm-icon"><Trash2 size={32} /></div>
@@ -332,9 +643,10 @@ const AdminDashboard = () => {
               <button className="btn-primary danger-btn" onClick={() => handleDelete(deleteConfirm)}>Yes, Delete</button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.getElementById('modal-root')
       )}
-    </div>
+    </>
   );
 };
 

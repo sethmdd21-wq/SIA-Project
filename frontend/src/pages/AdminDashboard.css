@@ -370,16 +370,40 @@
 .admin-tab {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.6rem 1.2rem;
-  border-radius: 8px;
+  gap: 0.6rem;
+  padding: 1rem 1.5rem;
   background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
   color: var(--text-secondary);
   font-weight: 600;
-  font-size: 0.9rem;
   cursor: pointer;
-  transition: all 0.2s ease;
-  border: none;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.admin-tab-badge {
+  position: absolute;
+  top: 8px;
+  right: 4px;
+  background: #ef4444;
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 700;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+}
+
+.admin-tab-badge.dot {
+  width: 10px;
+  height: 10px;
+  top: 10px;
+  right: 10px;
 }
 
 .admin-tab:hover {
@@ -569,6 +593,285 @@
   color: var(--text-secondary);
 }
 
+/* Order Cells */
+.order-id-cell {
+  font-family: monospace;
+  font-weight: 700;
+  color: var(--accent-primary);
+  font-size: 0.9rem;
+}
+
+.customer-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.customer-cell span {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 4px 10px;
+  border-radius: 50px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.type-badge.delivery { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+.type-badge.takeout { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+
+.status-indicator {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 50px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+.rider-cell {
+  font-size: 0.9rem;
+}
+
+.admin-select-sm {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 0.8rem;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.status-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-status {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.btn-status.prepare { background: #3b82f6; color: white; }
+.btn-status.deliver { background: #10b981; color: white; }
+.btn-status:hover { opacity: 0.9; transform: translateY(-1px); }
+
+/* Rider Status */
+.vehicle-cell {
+  display: flex;
+  flex-direction: column;
+}
+
+.vehicle-cell span {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.btn-status-toggle {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid transparent;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: all 0.3s ease;
+}
+
+.btn-status-toggle.available {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
+.btn-status-toggle.busy {
+  background: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+  border-color: rgba(245, 158, 11, 0.2);
+}
+
+.btn-status-toggle:hover {
+  transform: translateY(-1px);
+}
+
+.rider-status {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 50px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.rider-status.available { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+.rider-status.busy { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+
+.admin-tab-subgroup {
+  display: flex;
+  background: var(--bg-secondary);
+  padding: 4px;
+  border-radius: 12px;
+  gap: 4px;
+}
+
+.admin-tab-sm {
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  transition: all 0.3s ease;
+}
+
+.admin-tab-sm.active {
+  background: var(--card-bg);
+  color: var(--accent-primary);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.empty-table-cell {
+  padding: 4rem !important;
+  text-align: center;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.payment-status-badge {
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-top: 4px;
+  display: inline-block;
+}
+
+.payment-status-badge.paid {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+}
+
+.payment-status-badge.unpaid,
+.payment-status-badge.pending {
+  background: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+}
+
+.payment-status-badge.cod {
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+}
+
+/* Admin Modals */
+.admin-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  z-index: 5000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.admin-modal {
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  padding: 0;
+}
+
+.admin-modal::-webkit-scrollbar {
+  width: 6px;
+}
+
+.admin-modal::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 10px;
+}
+
+.admin-modal-header {
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--card-bg);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.admin-form {
+  padding: 2rem;
+}
+
+.admin-form-group {
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.admin-form-group label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
+.admin-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.admin-modal-footer {
+  padding: 1.5rem 2rem;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  background: var(--bg-secondary);
+}
+
+.admin-error {
+  color: #ef4444;
+  font-size: 0.8rem;
+  margin-top: 0.3rem;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
 @media (max-width: 768px) {
   .admin-page-header {
     flex-direction: column;
@@ -577,6 +880,7 @@
   .admin-tabs {
     width: 100%;
     overflow-x: auto;
+    padding-bottom: 5px;
   }
   .admin-header-actions {
     width: 100%;

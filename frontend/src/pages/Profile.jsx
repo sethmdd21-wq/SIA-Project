@@ -1,11 +1,18 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useAuth } from '../context/AuthContext';
-import { User, Mail, Phone, MapPin, LogOut, Trash2, AlertTriangle, X } from 'lucide-react';
+import { useOrders } from '../context/OrderContext';
+import { User, Mail, Phone, MapPin, LogOut, Trash2, AlertTriangle, X, ShoppingBag, Clock, Truck, CheckCircle } from 'lucide-react';
 import './Profile.css';
 
 const Profile = () => {
   const { user, updateProfile, logout, deleteAccount } = useAuth();
+  const { orders, deleteOrder } = useOrders();
   const [isEditing, setIsEditing] = useState(false);
+  
+  // Filter orders for the current user
+  const userOrders = orders.filter(o => o.user.email === user?.email);
+
   const [formData, setFormData] = useState({
     name: user?.name || '',
     email: user?.email || '',
@@ -14,6 +21,7 @@ const Profile = () => {
   });
   
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [deletePassword, setDeletePassword] = useState('');
   const [deleteError, setDeleteError] = useState('');
 
@@ -67,118 +75,193 @@ const Profile = () => {
     } else if (deletePassword.length < 1) {
       setDeleteError('Please enter your password to confirm.');
     } else {
-      // For this demo, let's just let them delete it no matter what, but show error if empty
-      // Actually, let's simulate a success for any non-empty password just so the user can test the flow
       deleteAccount();
+    }
+  };
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'Pending': return <Clock size={16} />;
+      case 'Preparing': return <ShoppingBag size={16} />;
+      case 'Out for Delivery': return <Truck size={16} />;
+      case 'Delivered': return <CheckCircle size={16} />;
+      default: return <Clock size={16} />;
     }
   };
 
   if (!user) return null;
 
   return (
-    <div className="profile-page container animate-fade-in">
+    <>
+      <div className="profile-page container animate-fade-in">
       <div className="profile-header">
         <h1>My Account</h1>
-        <p>Manage your details and preferences</p>
+        <p>Manage your details and track your orders</p>
       </div>
 
       <div className="profile-content">
-        <div className="profile-card glass-panel">
-          <div className="profile-card-header">
-            <h3>Personal Information</h3>
-            <button className="btn-secondary edit-btn" onClick={() => setIsEditing(!isEditing)}>
-              {isEditing ? 'Cancel' : 'Edit'}
-            </button>
+        <div className="profile-left">
+          <div className="profile-card glass-panel">
+            <div className="profile-card-header">
+              <h3>Personal Information</h3>
+              <button className="btn-secondary edit-btn" onClick={() => setIsEditing(!isEditing)}>
+                {isEditing ? 'Cancel' : 'Edit'}
+              </button>
+            </div>
+
+            <div className="profile-details">
+              <div className="detail-group">
+                <label><User size={16} /> Full Name</label>
+                {isEditing ? (
+                  <input type="text" name="name" className="input-field" value={formData.name} onChange={handleChange} />
+                ) : (
+                  <p>{user.name}</p>
+                )}
+              </div>
+
+              <div className="detail-group">
+                <label><Mail size={16} /> Email Address</label>
+                {isEditing ? (
+                  <input type="email" name="email" className="input-field" value={formData.email} onChange={handleChange} />
+                ) : (
+                  <p>{user.email}</p>
+                )}
+              </div>
+
+              <div className="detail-group">
+                <label><Phone size={16} /> Phone Number</label>
+                {isEditing ? (
+                  <input type="tel" name="phone" className="input-field" value={formData.phone} onChange={handleChange} />
+                ) : (
+                  <p>{user.phone}</p>
+                )}
+              </div>
+
+              <div className="detail-group">
+                <label><MapPin size={16} /> Delivery Address</label>
+                {isEditing ? (
+                  <textarea name="address" className="input-field" rows="2" value={formData.address} onChange={handleChange} />
+                ) : (
+                  <p>{user.address}</p>
+                )}
+              </div>
+            </div>
+
+            {isEditing && (
+              <div className="save-actions">
+                <button className="btn-primary" onClick={handleSave}>Save Changes</button>
+              </div>
+            )}
           </div>
 
-          <div className="profile-details">
-            <div className="detail-group">
-              <label><User size={16} /> Full Name</label>
-              {isEditing ? (
-                <input type="text" name="name" className="input-field" value={formData.name} onChange={handleChange} />
-              ) : (
-                <p>{user.name}</p>
-              )}
+          <div className="profile-card glass-panel">
+            <div className="profile-card-header">
+              <h3>Security</h3>
             </div>
+            <form onSubmit={handlePasswordSubmit} className="password-form" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {passwordError && <div className="error-alert"><AlertTriangle size={16}/> {passwordError}</div>}
+              {passwordSuccess && <div className="success-alert">✓ {passwordSuccess}</div>}
+              
+              <div className="detail-group">
+                <label>Current Password</label>
+                <input type="password" name="current" className="input-field" value={passwordData.current} onChange={handlePasswordChange} placeholder="Enter current password" />
+              </div>
+              
+              <div className="detail-group">
+                <label>New Password</label>
+                <input type="password" name="new" className="input-field" value={passwordData.new} onChange={handlePasswordChange} placeholder="Enter new password" />
+              </div>
 
-            <div className="detail-group">
-              <label><Mail size={16} /> Email Address</label>
-              {isEditing ? (
-                <input type="email" name="email" className="input-field" value={formData.email} onChange={handleChange} />
-              ) : (
-                <p>{user.email}</p>
-              )}
-            </div>
+              <div className="detail-group">
+                <label>Confirm New Password</label>
+                <input type="password" name="confirm" className="input-field" value={passwordData.confirm} onChange={handlePasswordChange} placeholder="Confirm new password" />
+              </div>
 
-            <div className="detail-group">
-              <label><Phone size={16} /> Phone Number</label>
-              {isEditing ? (
-                <input type="tel" name="phone" className="input-field" value={formData.phone} onChange={handleChange} />
-              ) : (
-                <p>{user.phone}</p>
-              )}
-            </div>
-
-            <div className="detail-group">
-              <label><MapPin size={16} /> Delivery Address</label>
-              {isEditing ? (
-                <textarea name="address" className="input-field" rows="2" value={formData.address} onChange={handleChange} />
-              ) : (
-                <p>{user.address}</p>
-              )}
-            </div>
+              <div className="save-actions" style={{ marginTop: '1rem' }}>
+                <button type="submit" className="btn-secondary">Update Password</button>
+              </div>
+            </form>
           </div>
+        </div>
 
-          {isEditing && (
-            <div className="save-actions">
-              <button className="btn-primary" onClick={handleSave}>Save Changes</button>
+        <div className="profile-right">
+          {!user.isAdmin && (
+            <div className="profile-card glass-panel orders-card">
+              <div className="profile-card-header">
+                <h3><ShoppingBag size={20} /> Recent Orders</h3>
+              </div>
+              <div className="order-history-list">
+                {userOrders.length === 0 ? (
+                  <div className="empty-orders">
+                    <ShoppingBag size={48} />
+                    <p>You haven't placed any orders yet.</p>
+                  </div>
+                ) : (
+                  userOrders.map(order => (
+                    <div key={order.id} className="order-history-item">
+                      <div className="order-item-header">
+                        <span className="order-id">{order.id}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                          <span className={`order-status-badge ${order.status.toLowerCase().replace(/ /g, '-')}`}>
+                            {getStatusIcon(order.status)}
+                            {order.status}
+                          </span>
+                          {order.status === 'Delivered' && (
+                            <button className="delete-order-sm" onClick={() => deleteOrder(order.id)} title="Remove from history">
+                              <Trash2 size={14} />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      <div className="order-item-body">
+                        <div className="order-items-summary">
+                          {order.items.slice(0, 2).map(item => item.name).join(', ')}
+                          {order.items.length > 2 && ` +${order.items.length - 2} more`}
+                        </div>
+                        <div className="order-total-row">
+                          <span className="order-date">{new Date(order.createdAt).toLocaleDateString()}</span>
+                          <span className="order-price">₱{order.total.toFixed(2)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           )}
-        </div>
 
-        <div className="profile-card glass-panel">
-          <div className="profile-card-header">
-            <h3>Change Password</h3>
-          </div>
-          <form onSubmit={handlePasswordSubmit} className="password-form" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {passwordError && <div style={{ color: '#ef4444', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><AlertTriangle size={16}/> {passwordError}</div>}
-            {passwordSuccess && <div style={{ color: '#10b981', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>✓ {passwordSuccess}</div>}
-            
-            <div className="detail-group">
-              <label>Current Password</label>
-              <input type="password" name="current" className="input-field" value={passwordData.current} onChange={handlePasswordChange} placeholder="Enter current password" />
+          <div className="danger-zone glass-panel">
+            <h3>Account Actions</h3>
+            <div className="action-buttons">
+              <button className="btn-secondary logout-btn" onClick={() => setShowLogoutModal(true)}>
+                <LogOut size={18} /> Log Out
+              </button>
+              <button className="btn-secondary delete-btn" onClick={() => setShowDeleteModal(true)}>
+                <Trash2 size={18} /> Delete Account
+              </button>
             </div>
-            
-            <div className="detail-group">
-              <label>New Password</label>
-              <input type="password" name="new" className="input-field" value={passwordData.new} onChange={handlePasswordChange} placeholder="Enter new password" />
-            </div>
-
-            <div className="detail-group">
-              <label>Confirm New Password</label>
-              <input type="password" name="confirm" className="input-field" value={passwordData.confirm} onChange={handlePasswordChange} placeholder="Confirm new password" />
-            </div>
-
-            <div className="save-actions" style={{ marginTop: '1rem' }}>
-              <button type="submit" className="btn-secondary">Update Password</button>
-            </div>
-          </form>
-        </div>
-
-        <div className="danger-zone glass-panel">
-          <h3>Account Actions</h3>
-          <div className="action-buttons">
-            <button className="btn-secondary logout-btn" onClick={logout}>
-              <LogOut size={18} /> Log Out
-            </button>
-            <button className="btn-secondary delete-btn" onClick={() => setShowDeleteModal(true)}>
-              <Trash2 size={18} /> Delete Account
-            </button>
           </div>
         </div>
       </div>
 
-      {showDeleteModal && (
+      {showLogoutModal && createPortal(
+        <div className="modal-overlay">
+          <div className="modal-card glass-panel animate-scale-in">
+            <div className="modal-icon warning-icon" style={{ background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6' }}>
+              <LogOut size={32} />
+            </div>
+            <h2>Confirm Log Out</h2>
+            <p className="modal-desc">Are you sure you want to log out of your account?</p>
+            <div className="modal-actions">
+              <button className="btn-secondary" onClick={() => setShowLogoutModal(false)}>Cancel</button>
+              <button className="btn-primary" onClick={logout}>Yes, Log Out</button>
+            </div>
+          </div>
+        </div>,
+        document.getElementById('modal-root')
+      )}
+
+      {showDeleteModal && createPortal(
         <div className="modal-overlay">
           <div className="modal-card glass-panel animate-fade-in">
             <button className="close-modal-btn" onClick={() => setShowDeleteModal(false)}><X size={20}/></button>
@@ -207,9 +290,10 @@ const Profile = () => {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.getElementById('modal-root')
       )}
-    </div>
+    </>
   );
 };
 

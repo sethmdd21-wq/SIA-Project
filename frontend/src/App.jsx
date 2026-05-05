@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import { MenuProvider } from './context/MenuContext';
+import { OrderProvider } from './context/OrderContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import CartSidebar from './components/CartSidebar';
@@ -13,6 +14,7 @@ import SignUp from './pages/SignUp';
 import Order from './pages/Order';
 import Takeout from './pages/Takeout';
 import Profile from './pages/Profile';
+import Checkout from './pages/Checkout';
 import AdminDashboard from './pages/AdminDashboard';
 import './App.css';
 
@@ -31,7 +33,8 @@ function App() {
     <AuthProvider>
       <CartProvider>
         <MenuProvider>
-          <Router>
+          <OrderProvider>
+            <Router>
             <div className={`app-container ${theme}`}>
               <Navbar theme={theme} toggleTheme={toggleTheme} />
               <CartSidebar />
@@ -57,6 +60,11 @@ function App() {
                       <Profile />
                     </ProtectedRoute>
                   } />
+                  <Route path="/checkout" element={
+                    <ProtectedRoute>
+                      <Checkout />
+                    </ProtectedRoute>
+                  } />
                   <Route path="/admin" element={
                     <ProtectedRoute adminOnly>
                       <AdminDashboard />
@@ -67,6 +75,7 @@ function App() {
               <Footer />
             </div>
           </Router>
+          </OrderProvider>
         </MenuProvider>
       </CartProvider>
     </AuthProvider>

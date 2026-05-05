@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, Mail, Phone, Lock, MapPin, AlertCircle } from 'lucide-react';
+import { User, Mail, Phone, Lock, MapPin, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import './Auth.css';
 
@@ -17,6 +17,8 @@ const SignUp = () => {
   });
 
   const [errors, setErrors] = useState({});
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const validate = (name, value) => {
     let error = '';
@@ -169,13 +171,16 @@ const SignUp = () => {
               <div className="input-icon-wrapper">
                 <Lock size={20} className="input-icon" />
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   name="password"
                   placeholder="Password"
                   className={`input-field auth-input ${errors.password ? 'error-input' : ''}`}
                   value={formData.password}
                   onChange={handleChange}
                 />
+                <button type="button" className="password-toggle" onClick={() => setShowPassword(!showPassword)}>
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
               </div>
               {errors.password && <span className="error-text"><AlertCircle size={14}/> {errors.password}</span>}
             </div>
@@ -184,13 +189,16 @@ const SignUp = () => {
               <div className="input-icon-wrapper">
                 <Lock size={20} className="input-icon" />
                 <input
-                  type="password"
+                  type={showConfirmPassword ? "text" : "password"}
                   name="confirmPassword"
                   placeholder="Confirm Password"
                   className={`input-field auth-input ${errors.confirmPassword ? 'error-input' : ''}`}
                   value={formData.confirmPassword}
                   onChange={handleChange}
                 />
+                <button type="button" className="password-toggle" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+                  {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
               </div>
               {errors.confirmPassword && <span className="error-text"><AlertCircle size={14}/> {errors.confirmPassword}</span>}
             </div>

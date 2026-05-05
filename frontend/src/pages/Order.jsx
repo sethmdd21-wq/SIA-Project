@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { ShoppingBag, Truck, MapPin, Search } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
@@ -25,7 +26,8 @@ const Order = () => {
   };
 
   return (
-    <div className="menu-page container animate-fade-in">
+    <>
+      <div className="menu-page container animate-fade-in">
       <div className="menu-header glass-panel">
         <div className="menu-header-info">
           <h2><Truck size={28} className="header-icon" /> Delivery Order</h2>
@@ -104,10 +106,13 @@ const Order = () => {
         </div>
       )}
 
-      {selectedFood && (
-        <FoodDetailsModal food={selectedFood} onClose={() => setSelectedFood(null)} />
+      </div>
+
+      {selectedFood && createPortal(
+        <FoodDetailsModal food={selectedFood} onClose={() => setSelectedFood(null)} />,
+        document.getElementById('modal-root')
       )}
-    </div>
+    </>
   );
 };
 
