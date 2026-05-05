@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Mail, Lock, AlertCircle } from 'lucide-react';
+import { Mail, Lock, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import './Auth.css';
 
@@ -19,6 +19,7 @@ const Login = () => {
     password: ''
   });
 
+  const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const message = location.state?.message;
 
@@ -41,7 +42,7 @@ const Login = () => {
     setErrors(prev => ({ ...prev, [name]: errorMsg }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const newErrors = {};
     Object.keys(formData).forEach(key => {
@@ -54,15 +55,13 @@ const Login = () => {
       return;
     }
 
-    // Success - dummy login simulation
-    login({
-      name: 'John Doe', // Dummy name for now since we don't have a backend
-      email: formData.email,
-      phone: '1234567890',
-      address: '123 Foodie Street, FC 12345'
-    });
+    const result = await login(formData.email, formData.password);
     
-    navigate('/');
+    if (result.success) {
+      navigate('/');
+    } else {
+      setErrors({ auth: result.message || 'Invalid Credentials' });
+    }
   };
 
   return (
@@ -74,8 +73,14 @@ const Login = () => {
         </div>
 
         {message && (
-          <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', padding: '10px', borderRadius: '8px', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <AlertCircle size={18} /> {message}
+          <div className="auth-alert" style={{ background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6', borderColor: 'rgba(59, 130, 246, 0.2)' }}>
+            <AlertCircle size={20} /> {message}
+          </div>
+        )}
+
+        {errors.auth && (
+          <div className="auth-alert">
+            <AlertCircle size={20} /> {errors.auth}
           </div>
         )}
 
@@ -99,13 +104,16 @@ const Login = () => {
             <div className="input-icon-wrapper">
               <Lock size={20} className="input-icon" />
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 name="password"
                 placeholder="Password"
                 className={`input-field auth-input ${errors.password ? 'error-input' : ''}`}
                 value={formData.password}
                 onChange={handleChange}
               />
+              <button type="button" className="password-toggle" onClick={() => setShowPassword(!showPassword)}>
+                {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
+              </button>
             </div>
             {errors.password && <span className="error-text"><AlertCircle size={14}/> {errors.password}</span>}
           </div>

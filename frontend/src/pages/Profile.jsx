@@ -243,6 +243,7 @@ const Profile = () => {
           </div>
         </div>
       </div>
+    </div>
 
       {showLogoutModal && createPortal(
         <div className="modal-overlay">

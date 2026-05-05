@@ -8,18 +8,22 @@ import FoodDetailsModal from '../components/FoodDetailsModal';
 import './Home.css';
 
 /* ─── Admin Home ─────────────────────────────────────────── */
-const AdminHome = ({ user, menuItems }) => {
-  const totalReviews = menuItems.reduce((s, i) => s + i.reviews.length, 0);
+const AdminHome = ({ user, menuItems = [] }) => {
+  const totalReviews = menuItems.reduce((s, i) => s + (i.reviews?.length || 0), 0);
   const avgRating = menuItems.length
-    ? (menuItems.reduce((s, i) => s + i.rating, 0) / menuItems.length).toFixed(1)
+    ? (menuItems.reduce((s, i) => s + (Number(i.rating) || 0), 0) / menuItems.length).toFixed(1)
     : '—';
-  const topDish = [...menuItems].sort((a, b) => b.rating - a.rating)[0];
-  const categories = [...new Set(menuItems.map(i => i.category))];
+  
+  const topDish = menuItems.length > 0 
+    ? [...menuItems].sort((a, b) => (b.rating || 0) - (a.rating || 0))[0] 
+    : null;
+    
+  const categories = [...new Set(menuItems.map(i => i.category))].filter(Boolean);
 
   // Flatten all reviews across all items, newest first
   const allReviews = menuItems
-    .flatMap(item => item.reviews.map(r => ({ ...r, dishName: item.name, dishImg: item.img })))
-    .sort((a, b) => b.id - a.id)
+    .flatMap(item => (item.reviews || []).map(r => ({ ...r, dishName: item.name, dishImg: item.img })))
+    .sort((a, b) => (b.id || 0) - (a.id || 0))
     .slice(0, 10);
 
   return (

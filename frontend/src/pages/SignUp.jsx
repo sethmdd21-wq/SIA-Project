@@ -70,7 +70,7 @@ const SignUp = () => {
     setErrors(prev => ({ ...prev, [name]: errorMsg }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const newErrors = {};
     Object.keys(formData).forEach(key => {
@@ -83,15 +83,19 @@ const SignUp = () => {
       return;
     }
 
-    // Success - log the user in using Context
-    login({
+    const result = await signup({
       name: formData.name,
       email: formData.email,
       phone: formData.phone,
-      address: formData.address
+      address: formData.address,
+      password: formData.password
     });
     
-    navigate('/');
+    if (result.success) {
+      navigate('/');
+    } else {
+      setErrors({ auth: result.message || 'Signup failed' });
+    }
   };
 
   return (
@@ -101,6 +105,12 @@ const SignUp = () => {
           <h2>Create an Account</h2>
           <p>Join SIA Food for fast delivery and easy takeout</p>
         </div>
+
+        {errors.auth && (
+          <div className="auth-alert">
+            <AlertCircle size={20} /> {errors.auth}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-row">
@@ -179,7 +189,7 @@ const SignUp = () => {
                   onChange={handleChange}
                 />
                 <button type="button" className="password-toggle" onClick={() => setShowPassword(!showPassword)}>
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
                 </button>
               </div>
               {errors.password && <span className="error-text"><AlertCircle size={14}/> {errors.password}</span>}
@@ -197,7 +207,7 @@ const SignUp = () => {
                   onChange={handleChange}
                 />
                 <button type="button" className="password-toggle" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
-                  {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  {showConfirmPassword ? <Eye size={18} /> : <EyeOff size={18} />}
                 </button>
               </div>
               {errors.confirmPassword && <span className="error-text"><AlertCircle size={14}/> {errors.confirmPassword}</span>}

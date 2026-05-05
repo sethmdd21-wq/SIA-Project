@@ -67,8 +67,16 @@ const Order = () => {
         ))}
       </div>
 
-      {filteredMenu.length === 0 ? (
-        <div className="empty-search-state">
+      {menuItems.length === 0 ? (
+        <div className="empty-search-state glass-panel animate-scale-in" style={{ padding: '4rem', marginTop: '2rem' }}>
+          <div className="cooking-animation" style={{ fontSize: '4rem', marginBottom: '1.5rem' }}>👨‍🍳</div>
+          <h2 style={{ marginBottom: '1rem' }}>Our Kitchen is Getting Ready!</h2>
+          <p style={{ color: 'var(--text-secondary)', maxWidth: '400px', margin: '0 auto' }}>
+            We're currently setting up our official menu. Please check back in a few moments to see our delicious Filipino dishes!
+          </p>
+        </div>
+      ) : filteredMenu.length === 0 ? (
+        <div className="empty-search-state glass-panel animate-fade-in" style={{ padding: '3rem', marginTop: '2rem' }}>
           <span style={{ fontSize: '3rem' }}>🔍</span>
           <p>No dishes found for <strong>"{searchQuery}"</strong></p>
           <button className="btn-secondary" onClick={() => setSearchQuery('')}>Clear Search</button>

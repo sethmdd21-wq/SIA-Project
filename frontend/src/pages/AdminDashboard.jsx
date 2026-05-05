@@ -43,8 +43,8 @@ const AdminDashboard = () => {
   );
 
   const allReviews = menuItems.flatMap(item => 
-    item.reviews.map(review => ({ ...review, dishId: item.id, dishName: item.name, dishImg: item.img }))
-  ).sort((a, b) => b.id - a.id);
+    (item.reviews || []).map(review => ({ ...review, dishId: item.id, dishName: item.name, dishImg: item.img }))
+  ).sort((a, b) => (b.id || 0) - (a.id || 0));
 
   const openAdd = () => {
     setEditingItem(null);

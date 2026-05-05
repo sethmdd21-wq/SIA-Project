@@ -10,81 +10,106 @@ export const useOrders = () => {
   return context;
 };
 
+const API_URL = 'http://localhost:5000/api';
+
 export const OrderProvider = ({ children }) => {
-  const [orders, setOrders] = useState(() => {
-    const saved = localStorage.getItem('sia_orders');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [orders, setOrders] = useState([]);
+  const [riders, setRiders] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const [riders, setRiders] = useState(() => {
-    const saved = localStorage.getItem('sia_riders');
-    return saved ? JSON.parse(saved) : [
-      { id: 1, name: 'Juan Dela Cruz', phone: '0917-123-4567', status: 'Available', vehicle: 'Motorcycle' },
-      { id: 2, name: 'Maria Santos', phone: '0918-987-6543', status: 'Available', vehicle: 'Bicycle' },
-      { id: 3, name: 'Jose Rizal', phone: '0919-555-4444', status: 'Busy', vehicle: 'Motorcycle' },
-    ];
-  });
-
-  useEffect(() => {
-    localStorage.setItem('sia_orders', JSON.stringify(orders));
-  }, [orders]);
-
-  useEffect(() => {
-    localStorage.setItem('sia_riders', JSON.stringify(riders));
-  }, [riders]);
-
-  const placeOrder = (orderData) => {
-    const newOrder = {
-      ...orderData,
-      id: `ORD-${Date.now()}`,
-      status: 'Pending',
-      createdAt: new Date().toISOString(),
-      history: [{ status: 'Pending', time: new Date().toISOString() }]
-    };
-    setOrders(prev => [newOrder, ...prev]);
-    return newOrder;
-  };
-
-  const updateOrderStatus = (orderId, newStatus, riderId = null) => {
-    setOrders(prev => prev.map(order => {
-      if (order.id === orderId) {
-        const updatedOrder = { 
-          ...order, 
-          status: newStatus,
-          history: [...order.history, { status: newStatus, time: new Date().toISOString() }]
-        };
-        if (riderId) updatedOrder.riderId = riderId;
-        return updatedOrder;
-      }
-      return order;
-    }));
-
-    if (riderId) {
-      setRiders(prev => prev.map(r => 
-        r.id === riderId ? { ...r, status: newStatus === 'Delivered' ? 'Available' : 'Busy' } : r
-      ));
+  const fetchData = async () => {
+    try {
+      const [ordersRes, ridersRes] = await Promise.all([
+        fetch(`${API_URL}/orders`),
+        fetch(`${API_URL}/riders`)
+      ]);
+      if (ordersRes.ok) setOrders(await ordersRes.json());
+      if (ridersRes.ok) setRiders(await ridersRes.json());
+    } catch (err) {
+      console.error('Failed to fetch orders/riders:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const addRider = (rider) => {
-    setRiders(prev => [...prev, { ...rider, id: Date.now(), status: 'Available' }]);
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const placeOrder = async (orderData) => {
+    const newOrder = {
+      ...orderData,
+      id: `ORD-${Date.now()}`
+    };
+    try {
+      const response = await fetch(`${API_URL}/orders`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newOrder)
+      });
+      if (response.ok) fetchData();
+      return newOrder;
+    } catch (err) {
+      console.error('Failed to place order:', err);
+    }
   };
 
-  const deleteRider = (id) => {
-    setRiders(prev => prev.filter(r => r.id !== id));
+  const updateOrderStatus = async (orderId, newStatus, riderId = null) => {
+    try {
+      const response = await fetch(`${API_URL}/orders/${orderId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus, riderId })
+      });
+      
+      if (response.ok) {
+        if (riderId) {
+          await fetch(`${API_URL}/riders/${riderId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: newStatus === 'Delivered' ? 'Available' : 'Busy' })
+          });
+        }
+        fetchData();
+      }
+    } catch (err) {
+      console.error('Failed to update order status:', err);
+    }
   };
 
-  const deleteOrder = (id) => {
-    setOrders(prev => prev.filter(o => o.id !== id));
+  const addRider = async (rider) => {
+    try {
+      const response = await fetch(`${API_URL}/riders`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(rider)
+      });
+      if (response.ok) fetchData();
+    } catch (err) {
+      console.error('Failed to add rider:', err);
+    }
   };
 
-  const toggleRiderStatus = (id) => {
-    setRiders(prev => prev.map(r => 
-      r.id === id ? { ...r, status: r.status === 'Available' ? 'Busy' : 'Available' } : r
-    ));
+  const toggleRiderStatus = async (id) => {
+    const rider = riders.find(r => r.id === id);
+    if (!rider) return;
+    try {
+      await fetch(`${API_URL}/riders/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: rider.status === 'Available' ? 'Busy' : 'Available' })
+      });
+      fetchData();
+    } catch (err) {
+      console.error('Failed to toggle rider status:', err);
+    }
   };
 
-  const [lastSeenOrdersCount, setLastSeenOrdersCount] = useState(orders.filter(o => o.status === 'Pending').length);
+  const [lastSeenOrdersCount, setLastSeenOrdersCount] = useState(0);
+
+  useEffect(() => {
+    setLastSeenOrdersCount(orders.filter(o => o.status === 'Pending').length);
+  }, [orders]);
 
   const clearNotifications = () => {
     setLastSeenOrdersCount(orders.filter(o => o.status === 'Pending').length);
@@ -94,11 +119,10 @@ export const OrderProvider = ({ children }) => {
     <OrderContext.Provider value={{ 
       orders, 
       riders, 
+      loading,
       placeOrder, 
       updateOrderStatus, 
       addRider, 
-      deleteRider,
-      deleteOrder,
       toggleRiderStatus,
       lastSeenOrdersCount,
       clearNotifications
