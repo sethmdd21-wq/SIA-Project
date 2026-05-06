@@ -11,9 +11,33 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('sia_user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
+    const storedUserStr = localStorage.getItem('sia_user');
+    if (storedUserStr) {
+      try {
+        const parsed = JSON.parse(storedUserStr);
+        (async () => {
+          try {
+            const resp = await fetch(`${API_URL}/users/${encodeURIComponent(parsed.email)}`);
+            if (resp.ok) {
+              const fresh = await resp.json();
+              const normalized = { ...fresh, isAdmin: Boolean(fresh.isAdmin) };
+              setUser(normalized);
+              localStorage.setItem('sia_user', JSON.stringify(normalized));
+            } else {
+              parsed.isAdmin = Boolean(parsed.isAdmin);
+              setUser(parsed);
+            }
+          } catch (err) {
+            parsed.isAdmin = Boolean(parsed.isAdmin);
+            setUser(parsed);
+          } finally {
+            setLoading(false);
+          }
+        })();
+        return;
+      } catch (err) {
+        // ignore parse errors
+      }
     }
     setLoading(false);
   }, []);
@@ -28,8 +52,9 @@ export const AuthProvider = ({ children }) => {
       
       if (response.ok) {
         const userData = await response.json();
-        setUser(userData);
-        localStorage.setItem('sia_user', JSON.stringify(userData));
+        const normalized = { ...userData, isAdmin: Boolean(userData.isAdmin) };
+        setUser(normalized);
+        localStorage.setItem('sia_user', JSON.stringify(normalized));
         return { success: true };
       } else {
         const error = await response.json();
@@ -51,8 +76,9 @@ export const AuthProvider = ({ children }) => {
       
       if (response.ok) {
         const newUser = await response.json();
-        setUser(newUser);
-        localStorage.setItem('sia_user', JSON.stringify(newUser));
+        const normalized = { ...newUser, isAdmin: Boolean(newUser.isAdmin) };
+        setUser(normalized);
+        localStorage.setItem('sia_user', JSON.stringify(normalized));
         return { success: true };
       } else {
         const errorData = await response.json();

@@ -16,7 +16,7 @@ const ProtectedRoute = ({ children, adminOnly = false }) => {
     return <Navigate to="/login" replace state={{ message: 'Please log in to access this page.' }} />;
   }
 
-  if (adminOnly && !user.isAdmin) {
+  if (adminOnly && !Boolean(user?.isAdmin)) {
     return <Navigate to="/" replace />;
   }
 

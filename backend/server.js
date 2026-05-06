@@ -47,11 +47,40 @@ app.post('/api/login', async (req, res) => {
 app.post('/api/signup', async (req, res) => {
   const { name, email, password, phone, address } = req.body;
   try {
+    // ensure `isAdmin` column exists so we can set admin based on email domain
+    try {
+      const [cols] = await db.query("SHOW COLUMNS FROM users LIKE 'isAdmin'");
+      if (!cols || cols.length === 0) {
+        await db.query('ALTER TABLE users ADD COLUMN isAdmin TINYINT DEFAULT 0');
+      }
+    } catch (e) {
+      // ignore failures here; INSERT below will still work if column missing in some DB setups
+      console.warn('Warning checking/creating isAdmin column:', e.message);
+    }
+
+    const isAdminFlag = email && String(email).toLowerCase().endsWith('@admin.com') ? 1 : 0;
+
     const [result] = await db.query(
-      'INSERT INTO users (name, email, password, phone, address) VALUES (?, ?, ?, ?, ?)',
-      [name, email, password, phone, address]
+      'INSERT INTO users (name, email, password, phone, address, isAdmin) VALUES (?, ?, ?, ?, ?, ?)',
+      [name, email, password, phone, address, isAdminFlag]
     );
-    res.json({ id: result.insertId, name, email, phone, address, isAdmin: 0 });
+
+    res.json({ id: result.insertId, name, email, phone, address, isAdmin: Boolean(isAdminFlag) });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Get user by email (used by frontend to refresh auth state)
+app.get('/api/users/:email', async (req, res) => {
+  const { email } = req.params;
+  try {
+    const [rows] = await db.query('SELECT id, name, email, phone, address, isAdmin FROM users WHERE email = ?', [email]);
+    if (rows.length === 0) return res.status(404).json({ message: 'User not found' });
+    const user = rows[0];
+    // Normalize isAdmin to boolean for the frontend
+    user.isAdmin = Boolean(user.isAdmin);
+    res.json(user);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
