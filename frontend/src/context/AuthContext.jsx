@@ -93,6 +93,12 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     setUser(null);
     localStorage.removeItem('sia_user');
+    try {
+      localStorage.removeItem('sia_cart');
+      window.dispatchEvent(new Event('sia_clear_cart'));
+    } catch (e) {
+      // ignore in environments without window/localStorage
+    }
   };
 
   const updateProfile = async (updatedData) => {
