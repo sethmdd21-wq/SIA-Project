@@ -18,8 +18,22 @@ export const CartProvider = ({ children }) => {
 
   // Save to local storage whenever cart changes
   useEffect(() => {
-    localStorage.setItem('sia_cart', JSON.stringify(cart));
+    if (!cart || cart.length === 0) {
+      localStorage.removeItem('sia_cart');
+    } else {
+      localStorage.setItem('sia_cart', JSON.stringify(cart));
+    }
   }, [cart]);
+
+  // Listen for global clear-cart events (e.g., account deletion)
+  useEffect(() => {
+    const handleClear = () => setCart([]);
+    if (typeof window !== 'undefined') {
+      window.addEventListener('sia_clear_cart', handleClear);
+      return () => window.removeEventListener('sia_clear_cart', handleClear);
+    }
+    return undefined;
+  }, []);
 
   const addToCart = (item) => {
     setCart(prevCart => {

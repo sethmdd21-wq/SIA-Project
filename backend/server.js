@@ -276,7 +276,21 @@ app.post('/api/reviews', async (req, res) => {
       'INSERT INTO reviews (dish_id, user_name, rating, comment) VALUES (?, ?, ?, ?)',
       [dish_id, user_name, rating, comment]
     );
-    res.json({ id: result.insertId, ...req.body });
+
+    // Recalculate average rating for the dish and persist it on the menu_items table
+    try {
+      const [ratingResult] = await db.query(
+        'SELECT AVG(rating) as avgRating FROM reviews WHERE dish_id = ?',
+        [dish_id]
+      );
+      const avg = ratingResult && ratingResult[0] ? ratingResult[0].avgRating || 0.0 : 0.0;
+      await db.query('UPDATE menu_items SET rating = ? WHERE id = ?', [avg, dish_id]);
+      res.json({ id: result.insertId, ...req.body, avgRating: avg });
+    } catch (innerErr) {
+      console.error('Failed to update aggregated rating:', innerErr.message);
+      // Still return success for the inserted review, but warn frontend
+      res.json({ id: result.insertId, ...req.body, warning: 'Review saved but failed to update dish rating' });
+    }
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

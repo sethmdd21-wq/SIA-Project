@@ -118,6 +118,13 @@ export const AuthProvider = ({ children }) => {
       });
       setUser(null);
       localStorage.removeItem('sia_user');
+      // Also clear persisted cart and notify cart context to clear in-memory state
+      try {
+        localStorage.removeItem('sia_cart');
+        window.dispatchEvent(new Event('sia_clear_cart'));
+      } catch (e) {
+        // ignore (e.g., during SSR or unusual environments)
+      }
       return { success: true };
     } catch (err) {
       console.error('Delete account error:', err);

@@ -1,0 +1,480 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SIA Project — Complete Documentation</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; line-height:1.5; padding:24px; color:#222 }
+    h1,h2,h3 { color:#0b3a66 }
+    pre { background:#f7f7f9; padding:12px; border:1px solid #e1e4e8; overflow:auto }
+    code { background:#f1f1f1; padding:2px 6px; border-radius:4px }
+    .container { max-width:980px; margin:0 auto }
+    ul { margin-left:1.1rem }
+    hr { border:none; border-top:1px solid #eee; margin:20px 0 }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>SIA Project — Complete Documentation</h1>
+
+  <p>This document consolidates detailed developer and operator documentation for the SIA online ordering system (frontend + backend). It's designed to be uploaded to Google Docs or used directly from the repository.</p>
+
+  <h2>Contents</h2>
+  <ul>
+    <li>Overview</li>
+    <li>Architecture &amp; ERD</li>
+    <li>Quickstart (development)</li>
+    <li>Environment variables</li>
+    <li>Database schema &amp; examples</li>
+    <li>API reference (detailed)</li>
+    <li>Backend internals</li>
+    <li>Frontend internals</li>
+    <li>Seeding &amp; data maintenance</li>
+    <li>Deployment &amp; production checklist</li>
+    <li>Troubleshooting &amp; FAQ</li>
+    <li>Appendix: sample requests &amp; responses</li>
+  </ul>
+
+  <hr />
+
+  <h2>Overview</h2>
+  <p>SIA is a small online food ordering application composed of:</p>
+  <ul>
+    <li>Frontend: React (Vite) app located in the <code>frontend/</code> folder.</li>
+    <li>Backend: Node.js + Express app located in the <code>backend/</code> folder, using MySQL via <code>mysql2/promise</code> (<code>backend/db.js</code>).</li>
+    <li>Database: MySQL with tables for <code>menu_items</code>, <code>reviews</code>, <code>users</code>, <code>orders</code>, and <code>riders</code>.</li>
+  </ul>
+
+  <p><strong>Primary UX flows</strong></p>
+  <ul>
+    <li>Customers browse the menu and open dish details.</li>
+    <li>Authenticated customers can submit star ratings and textual reviews.</li>
+    <li>Reviews are stored in <code>reviews</code> and the backend updates the aggregated <code>menu_items.rating</code> immediately after insert.</li>
+  </ul>
+
+  <hr />
+
+  <h2>Architecture &amp; ERD</h2>
+  <p><strong>High-level components</strong></p>
+  <ul>
+    <li>Client (React): UI, contexts for auth/menu/cart/order</li>
+    <li>API (Express): REST endpoints for auth, menu, orders, reviews, riders</li>
+    <li>DB (MySQL): persistent storage</li>
+  </ul>
+
+  <p><strong>Mermaid ER diagram (openable in compatible renderers):</strong></p>
+  <pre><code class="language-mermaid">erDiagram
+    MENU_ITEMS ||--o{ REVIEWS : has
+    MENU_ITEMS {
+      int id PK
+      varchar name
+      decimal price
+      varchar category
+      text img
+      text description
+      decimal rating
+    }
+    REVIEWS {
+      int id PK
+      int dish_id FK
+      varchar user_name
+      int rating
+      text comment
+      text reply
+      timestamp date
+    }
+    USERS ||--o{ ORDERS : places
+    USERS {
+      int id PK
+      varchar name
+      varchar email
+      varchar password
+      varchar phone
+      text address
+      tinyint isAdmin
+    }
+    ORDERS {
+      varchar id PK
+      varchar user_email
+      json items
+      decimal total
+      varchar type
+      varchar status
+      varchar paymentMethod
+      varchar paymentStatus
+      int riderId
+      timestamp createdAt
+    }
+    RIDERS {
+      int id PK
+      varchar name
+      varchar phone
+      varchar vehicle
+      varchar plate
+      varchar model
+      varchar status
+    }
+</code></pre>
+
+  <hr />
+
+  <h2>Quickstart (development)</h2>
+  <p><strong>Prerequisites</strong></p>
+  <ul>
+    <li>Node.js 18+ and npm</li>
+    <li>MySQL server</li>
+    <li>PowerShell or a POSIX shell</li>
+  </ul>
+
+  <p><strong>1) Backend setup (Terminal A)</strong></p>
+  <pre><code class="language-powershell">cd backend
+npm install
+# create a .env file (see next section)
+node seed.js         # create menu_items
+node seed_system.js  # create sample users, orders, reviews and update averages
+npm run dev          # start server with nodemon (auto-reload)
+# (or) node server.js</code></pre>
+
+  <p><strong>2) Frontend setup (Terminal B)</strong></p>
+  <pre><code class="language-powershell">cd frontend
+npm install
+npm run dev</code></pre>
+
+  <p>Open the Vite URL (usually <a href="http://localhost:5173">http://localhost:5173</a>). Backend APIs default to <a href="http://localhost:5000">http://localhost:5000</a>.</p>
+
+  <hr />
+
+  <h2>Environment variables</h2>
+  <p>Place a <code>.env</code> file in the <code>backend/</code> directory with:</p>
+  <pre><code>DB_HOST=127.0.0.1
+DB_USER=root
+DB_PASS=your_password
+DB_NAME=sia_ordering
+PORT=5000</code></pre>
+
+  <p>Adjust for your environment. Do not commit <code>.env</code> to source control.</p>
+
+  <hr />
+
+  <h2>Database schema &amp; examples</h2>
+  <p><strong>DDL (create tables used by the application):</strong></p>
+  <pre><code class="language-sql">CREATE TABLE IF NOT EXISTS menu_items (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  price DECIMAL(10,2) NOT NULL,
+  category VARCHAR(100),
+  img TEXT,
+  description TEXT,
+  rating DECIMAL(3,2) DEFAULT 0.0
+);
+
+CREATE TABLE IF NOT EXISTS reviews (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  dish_id INT NOT NULL,
+  user_name VARCHAR(255),
+  rating INT NOT NULL,
+  comment TEXT,
+  reply TEXT,
+  date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (dish_id) REFERENCES menu_items(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS users (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(255),
+  email VARCHAR(255) UNIQUE,
+  password VARCHAR(255),
+  phone VARCHAR(50),
+  address TEXT,
+  isAdmin TINYINT(1) DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS orders (
+  id VARCHAR(50) PRIMARY KEY,
+  user_email VARCHAR(255),
+  items JSON,
+  total DECIMAL(10,2),
+  type VARCHAR(50),
+  status VARCHAR(50),
+  paymentMethod VARCHAR(50),
+  paymentStatus VARCHAR(50),
+  riderId INT,
+  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS riders (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(255),
+  phone VARCHAR(50),
+  vehicle VARCHAR(100),
+  plate VARCHAR(50),
+  model VARCHAR(100),
+  status VARCHAR(50) DEFAULT 'Available'
+);</code></pre>
+
+  <p><strong>Notes and queries</strong></p>
+  <ul>
+    <li>To view existing table definitions: run <code>DESCRIBE &lt;table&gt;</code> in MySQL or use the repo scripts <code>backend/check_schema.js</code> and <code>backend/check_full_schema.js</code>.</li>
+    <li><code>menu_items.rating</code> is stored as the current averaged rating (decimal). The backend updates this value after each review insert using <code>AVG(rating)</code> over the <code>reviews</code> table.</li>
+  </ul>
+
+  <p><strong>Example: recompute one item's rating</strong></p>
+  <pre><code class="language-sql">SELECT AVG(rating) as avgRating FROM reviews WHERE dish_id = 21;
+UPDATE menu_items SET rating = &lt;avgRating&gt; WHERE id = 21;</code></pre>
+
+  <hr />
+
+  <h2>API Reference (detailed)</h2>
+  <p><strong>Base URL (development)</strong>: <code>http://localhost:5000/api</code></p>
+  <p>All endpoints expect and return JSON. Below are the primary endpoints with request/response examples.</p>
+
+  <h3>Auth</h3>
+  <ul>
+    <li><strong>POST</strong> <code>/api/login</code>
+      <ul>
+        <li>Body: <code>{ "email": "user@example.com", "password": "pass" }</code></li>
+        <li>Success response: <code>200</code> user object (no password)</li>
+      </ul>
+    </li>
+  </ul>
+
+  <p><strong>Example</strong></p>
+  <pre><code class="language-bash">curl -X POST http://localhost:5000/api/login \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"juan@gmail.com","password":"P@$$w0rd"}'</code></pre>
+
+  <h3>Signup</h3>
+  <p><strong>POST</strong> <code>/api/signup</code> — Body: <code>{ name, email, password, phone, address }</code></p>
+
+  <h3>Menu</h3>
+  <p><strong>GET</strong> <code>/api/menu</code> — Returns array of menu items, each including a <code>reviews</code> array.</p>
+
+  <p><strong>Sample menu item response (trimmed)</strong></p>
+  <pre><code class="language-json">{
+  "id": 21,
+  "name": "Classic Chicken Adobo",
+  "price": 245.00,
+  "category": "Mains",
+  "img": "https://...",
+  "description": "...",
+  "rating": 4.67,
+  "reviews": [ { "id": 1, "dish_id":21, "user_name":"Juan", "rating":5, "comment":"Great" } ]
+}</code></pre>
+
+  <p><strong>POST</strong> <code>/api/menu</code> — Create a menu item — body: <code>{ name, price, category, img, description }</code></p>
+
+  <h3>Reviews</h3>
+  <p><strong>POST</strong> <code>/api/reviews</code></p>
+  <ul>
+    <li>Body: <code>{ dish_id, user_name, rating, comment }</code></li>
+    <li>Behavior: Inserts a review row, then the backend recalculates the dish average and persists it to <code>menu_items.rating</code>.</li>
+    <li>Response: <code>201</code> with inserted review ID and <code>avgRating</code> when successful.</li>
+  </ul>
+
+  <p><strong>Sample request</strong></p>
+  <pre><code class="language-bash">curl -X POST http://localhost:5000/api/reviews \
+  -H 'Content-Type: application/json' \
+  -d '{"dish_id":21,"user_name":"juan@gmail.com","rating":4,"comment":"Nice!"}'</code></pre>
+
+  <p><strong>Sample successful response</strong></p>
+  <pre><code class="language-json">{
+  "id": 123,
+  "dish_id": 21,
+  "user_name": "juan@gmail.com",
+  "rating": 4,
+  "comment": "Nice!",
+  "avgRating": 4.57
+}</code></pre>
+
+  <p>If the server inserted the review but failed to update the aggregated rating, the response will contain a <code>warning</code> field.</p>
+
+  <p><strong>PUT</strong> <code>/api/reviews/:id/reply</code> — Body: <code>{ reply }</code> — used by admin to post a reply to a review.</p>
+
+  <h3>Orders</h3>
+  <p><strong>POST</strong> <code>/api/orders</code> — Body: <code>{ id, user, items, total, type, paymentMethod, paymentStatus }</code> — <code>items</code> is expected to be JSON-serializable (the server stores as stringified JSON in DB).</p>
+  <p><strong>GET</strong> <code>/api/orders</code> (admin) — returns orders joined with user details.</p>
+
+  <hr />
+
+  <h2>Backend internals</h2>
+  <p><strong>Key files</strong></p>
+  <ul>
+    <li><code>backend/server.js</code> — express routes and handlers (auth, menu, orders, reviews, riders).</li>
+    <li><code>backend/db.js</code> — exports a <code>mysql2/promise</code> pool using <code>.env</code> variables.</li>
+    <li><code>backend/seed.js</code>, <code>backend/seed_system.js</code>, <code>backend/add_extra_reviews.js</code> — helper seed scripts.</li>
+  </ul>
+
+  <p><strong>Important logic</strong></p>
+  <p>Review insertion flow (simplified):</p>
+  <ol>
+    <li>Insert review into <code>reviews</code> table.</li>
+    <li>Query <code>SELECT AVG(rating) FROM reviews WHERE dish_id = ?</code>.</li>
+    <li><code>UPDATE menu_items SET rating = ? WHERE id = ?</code>.</li>
+  </ol>
+
+  <p>This ensures the frontend sees the updated average next time it requests the menu.</p>
+
+  <p><strong>Error handling</strong></p>
+  <p>Most endpoints return <code>500</code> with <code>{ error: &lt;message&gt; }</code> on unexpected DB errors. For production, consider adding structured logs and enhanced error codes.</p>
+
+  <p><strong>Security notes</strong></p>
+  <p>Seed passwords are plaintext — replace with bcrypt hashed passwords and implement secure authentication (JWT or session-based) for production.</p>
+
+  <hr />
+
+  <h2>Frontend internals</h2>
+  <p><strong>Main folders</strong></p>
+  <ul>
+    <li><code>frontend/src/components</code> — <code>FoodDetailsModal.jsx</code>, <code>CartSidebar.jsx</code>, <code>Navbar.jsx</code>, <code>Footer.jsx</code> etc.</li>
+    <li><code>frontend/src/context</code> — <code>MenuContext.jsx</code>, <code>AuthContext.jsx</code>, <code>CartContext.jsx</code>, <code>OrderContext.jsx</code>.</li>
+  </ul>
+
+  <p><strong>Key flows</strong></p>
+  <ul>
+    <li><code>MenuContext</code> fetches menu (<code>GET /api/menu</code>) and provides <code>addReview()</code> which calls <code>POST /api/reviews</code> and refreshes the menu via <code>fetchMenu()</code>.</li>
+    <li><code>FoodDetailsModal</code> handles the star UI and comment input, validates rating selection, then calls <code>addReview()</code>.</li>
+  </ul>
+
+  <p><strong>UX notes</strong></p>
+  <p>After submitting a review the UI resets the input and relies on the refreshed <code>menuItems</code> to reflect the updated <code>rating</code> value.</p>
+
+  <hr />
+
+  <h2>Seeding &amp; data maintenance</h2>
+  <ul>
+    <li><code>node seed.js</code> — populates <code>menu_items</code> with sample dishes.</li>
+    <li><code>node seed_system.js</code> — inserts sample users, orders and reviews, then recomputes menu item averages.</li>
+    <li><code>node add_extra_reviews.js</code> — helper to add more reviews in bulk and recompute averages.</li>
+  </ul>
+
+  <p>If you make manual changes to <code>reviews</code>, re-run the AVG recomputation logic or run the helper script to resync <code>menu_items.rating</code>.</p>
+
+  <hr />
+
+  <h2>Deployment &amp; production checklist</h2>
+  <p><strong>Minimal production checklist</strong></p>
+  <ol>
+    <li>Use hashed passwords (bcrypt) and secure authentication (JWT or session with same-site cookies).</li>
+    <li>Move secrets to a secure store (Azure Key Vault, AWS Secrets Manager, or environment variables on CI/CD runner).</li>
+    <li>Run the backend behind a process manager (PM2, systemd) or in containers managed by Kubernetes / container service.</li>
+    <li>Use TLS (HTTPS) for frontend and backend. Put backend behind a reverse proxy (Nginx) or API Gateway.</li>
+    <li>Harden CORS policy to only allow known frontend origins.</li>
+    <li>Add request validation and rate limiting (express-rate-limit) on sensitive endpoints.</li>
+    <li>Add logging/monitoring (winston, pino, AppInsights, or DataDog).</li>
+    <li>Backup the database regularly and enable automated migrations.</li>
+  </ol>
+
+  <p><strong>Docker Compose (example) — local production-like environment</strong></p>
+  <pre><code class="language-yaml">version: '3.8'
+services:
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: example
+      MYSQL_DATABASE: sia_ordering
+    ports:
+      - '3306:3306'
+    volumes:
+      - db-data:/var/lib/mysql
+
+  backend:
+    build: ./backend
+    environment:
+      DB_HOST: db
+      DB_USER: root
+      DB_PASS: example
+      DB_NAME: sia_ordering
+      PORT: 5000
+    ports:
+      - '5000:5000'
+    depends_on:
+      - db
+
+  frontend:
+    build: ./frontend
+    ports:
+      - '5173:5173'
+    depends_on:
+      - backend
+
+volumes:
+  db-data:</code></pre>
+
+  <p>Note: <code>backend</code> and <code>frontend</code> images would require Dockerfiles; for quick local development prefer running <code>npm run dev</code>.</p>
+
+  <hr />
+
+  <h2>Troubleshooting &amp; FAQ</h2>
+  <p><strong>Q: Submitted reviews don't change the displayed rating.</strong></p>
+  <p><strong>A:</strong> Confirm the backend is running the updated <code>POST /api/reviews</code> handler that recalculates AVG and updates <code>menu_items.rating</code>. Restart the backend if you recently patched <code>server.js</code>.</p>
+
+  <p><strong>Q: <code>GET /api/menu</code> returns no reviews.</strong></p>
+  <p><strong>A:</strong> Check <code>reviews</code> table content and ensure the <code>dish_id</code> values match <code>menu_items.id</code>. Run <code>node seed_system.js</code> to reseed sample data.</p>
+
+  <p><strong>Q: DB connection refused.</strong></p>
+  <p><strong>A:</strong> Verify <code>.env</code> values, confirm MySQL is reachable, and check for firewall rules. Use <code>mysql -u &lt;user&gt; -p -h &lt;host&gt;</code> to test connectivity.</p>
+
+  <p><strong>Q: How to re-sync all menu ratings after manual updates?</strong></p>
+  <p><strong>A:</strong> Run the recompute script pattern shown in <code>backend/add_extra_reviews.js</code> or run the <code>seed_system.js</code> which also updates averages.</p>
+
+  <hr />
+
+  <h2>Appendix — Sample requests &amp; responses</h2>
+  <p><strong>1) Submit a review (curl)</strong></p>
+  <pre><code class="language-bash">curl -X POST http://localhost:5000/api/reviews \
+  -H 'Content-Type: application/json' \
+  -d '{"dish_id":21,"user_name":"juan@gmail.com","rating":4,"comment":"Nice!"}'</code></pre>
+
+  <p><strong>Response</strong></p>
+  <pre><code class="language-json">{
+  "id": 123,
+  "dish_id": 21,
+  "user_name": "juan@gmail.com",
+  "rating": 4,
+  "comment": "Nice!",
+  "avgRating": 4.57
+}</code></pre>
+
+  <p><strong>2) Get the menu</strong></p>
+  <pre><code class="language-bash">curl http://localhost:5000/api/menu</code></pre>
+
+  <p><strong>Response (one item)</strong></p>
+  <pre><code class="language-json">[
+  {
+    "id": 21,
+    "name": "Classic Chicken Adobo",
+    "price": 245,
+    "category": "Mains",
+    "img": "https://...",
+    "description": "...",
+    "rating": 4.57,
+    "reviews": [ /* array of review objects */ ]
+  }
+]</code></pre>
+
+  <hr />
+
+  <h2>Convert this document to Google Docs (gdox)</h2>
+  <p><strong>Option A — Pandoc (recommended)</strong></p>
+  <pre><code class="language-powershell">choco install pandoc
+pandoc docs/SIA-Project-Full-Documentation.md -o SIA-Project-Documentation.docx</code></pre>
+
+  <p>Upload the produced DOCX to Google Drive and open it with Google Docs.</p>
+
+  <p><strong>Option B — copy &amp; paste:</strong> open the Markdown file, copy content, paste into a blank Google Doc, then adjust code block formatting.</p>
+
+  <hr />
+
+  <h2>Next steps &amp; how I can help</h2>
+  <ul>
+    <li>I can convert this Markdown to DOCX and add it to the repo.</li>
+    <li>I can generate an ERD image file, or add a PDF export.</li>
+    <li>I can create a deployment <code>Dockerfile</code> and <code>docker-compose.yml</code> that builds and runs both services.</li>
+  </ul>
+
+  <p>Tell me which of the above you'd like me to do next.</p>
+
+</div>
+</body>
+</html>
